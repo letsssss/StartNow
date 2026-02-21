@@ -36,7 +36,7 @@ export function WorkflowTimeline({
     const showStart =
       !!onStartPickNow &&
       !item.done &&
-      (inProgress ? isCurrentStep : getIndex() === 0);
+      (inProgress ? isCurrentStep : getIndex() === 0 || item.title === activeStepTitle);
     return (
       <View style={styles.cardRow}>
         <WorkflowCard

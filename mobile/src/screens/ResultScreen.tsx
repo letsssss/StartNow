@@ -33,6 +33,7 @@ export function ResultScreen({ navigation }: Props) {
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [inProgress, setInProgress] = useState(false);
   const [activeStepId, setActiveStepId] = useState<string | null>(null);
+  const [runningStepId, setRunningStepId] = useState<string | null>(null);
   const [stepDoneMap, setStepDoneMap] = useState<Record<string, boolean>>({});
   const [orderedSteps, setOrderedSteps] = useState(() =>
     data ? normalizeToWorkflowSteps(data) : []
@@ -57,9 +58,15 @@ export function ResultScreen({ navigation }: Props) {
 
   const handleStartPickNow = () => {
     if (!data) return;
-    const middleSteps = orderedSteps.filter((s) => s.kind === "step");
-    const current = middleSteps.find((s) => s.title === data.pickNow.label) ?? middleSteps[0];
-    setActiveStepId(current?.id ?? null);
+    if (activeStepId === null) {
+      const middleSteps = orderedSteps.filter((s) => s.kind === "step");
+      const current = middleSteps.find((s) => s.title === data.pickNow.label) ?? middleSteps[0];
+      const id = current?.id ?? null;
+      setActiveStepId(id);
+      setRunningStepId(id);
+    } else {
+      setRunningStepId(activeStepId);
+    }
     setInProgress(true);
   };
 
@@ -112,24 +119,24 @@ export function ResultScreen({ navigation }: Props) {
 
   const handleComplete = () => {
     const middleSteps = orderedSteps.filter((s) => s.kind === "step");
-    const currentIndex = middleSteps.findIndex((s) => s.id === activeStepId);
-    const currentStep = currentIndex >= 0 ? middleSteps[currentIndex] : null;
+    const runningIndex = middleSteps.findIndex((s) => s.id === runningStepId);
+    const runningStep = runningIndex >= 0 ? middleSteps[runningIndex] : null;
     const nextStep =
-      currentIndex >= 0 && currentIndex + 1 < middleSteps.length
-        ? middleSteps[currentIndex + 1]
+      runningIndex >= 0 && runningIndex + 1 < middleSteps.length
+        ? middleSteps[runningIndex + 1]
         : null;
 
-    if (currentStep) {
-      setStepDoneMap((prev) => ({ ...prev, [currentStep.id]: true }));
+    if (runningStep) {
+      setStepDoneMap((prev) => ({ ...prev, [runningStep.id]: true }));
     }
 
     if (nextStep) {
       setActiveStepId(nextStep.id);
-      setInProgress(true);
     } else {
       setActiveStepId(null);
-      setInProgress(false);
     }
+    setRunningStepId(null);
+    setInProgress(false);
 
     setLastRecordMessage("완료했어요");
     setToast("완료했어요");
@@ -145,6 +152,7 @@ export function ResultScreen({ navigation }: Props) {
           onPress: () => {
             setLastRecordMessage(`중단 (${r.label})`);
             setToast(`중단 (${r.label})`);
+            setRunningStepId(null);
             setActiveStepId(null);
             setInProgress(false);
           },
@@ -155,9 +163,9 @@ export function ResultScreen({ navigation }: Props) {
   };
 
   const activeStepTitle =
-    inProgress && activeStepId
-      ? orderedSteps.find((s) => s.id === activeStepId)?.title ?? data?.pickNow?.label
-      : data?.pickNow?.label ?? "";
+    (activeStepId ? orderedSteps.find((s) => s.id === activeStepId)?.title : null) ??
+    data?.pickNow?.label ??
+    "";
 
   if (!data) {
     return (
@@ -196,7 +204,11 @@ export function ResultScreen({ navigation }: Props) {
             onStartPickNow={handleStartPickNow}
             onReorderMiddle={handleReorderMiddle}
             inProgress={inProgress}
-            activeStepTitle={activeStepTitle}
+            activeStepTitle={
+              inProgress
+                ? (orderedSteps.find((s) => s.id === runningStepId)?.title ?? "")
+                : activeStepTitle
+            }
           />
         </View>
 
@@ -235,7 +247,7 @@ export function ResultScreen({ navigation }: Props) {
       {inProgress ? (
         <View style={styles.bottomActionBar}>
           <Text style={styles.bottomActionBarLabel} numberOfLines={1}>
-            지금 하는 중: {activeStepTitle}
+            지금 하는 중: {runningStepId ? orderedSteps.find((s) => s.id === runningStepId)?.title ?? "" : ""}
           </Text>
           <View style={styles.bottomActionBarButtons}>
             <TouchableOpacity style={[styles.endBtn, styles.completeBtn]} onPress={handleComplete}>
