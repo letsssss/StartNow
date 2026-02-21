@@ -38,7 +38,6 @@ function orderActionsByRule(actions: ActionFromAI[]): ActionFromAI[] {
 
 function buildWorkflowReason(result: ParseActionsResult): string {
   const parts: string[] = [];
-  if (result.intent === "prioritize") parts.push("우선순위 요청을 반영해 순서를 정했습니다.");
   if (result.notes) parts.push(result.notes);
   if (result.truncated) parts.push("12개 초과분은 생략했습니다.");
   if (parts.length === 0) return "입력 내용을 바탕으로 행동을 분해했습니다.";

@@ -14,7 +14,7 @@ export type WorkflowStep = {
 
 const MAX_STEP_TITLE_LENGTH = 24;
 const MIN_STEPS = 3;
-const MAX_STEPS = 6;
+const MAX_STEPS = 12;
 
 function trimOneLine(text: string): string {
   const t = text.replace(/\s+/g, " ").trim();

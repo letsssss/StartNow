@@ -165,10 +165,9 @@ export function ResultScreen({ navigation }: Props) {
               />
             </View>
 
-            <Text style={styles.sectionLabel}>왜 이런 순서인가요?</Text>
+            <Text style={styles.sectionLabel}>순서를 이렇게 잡았어요</Text>
             <Text style={styles.workflowReason}>{data.workflowReason}</Text>
 
-            <Text style={styles.title}>{data.title}</Text>
             <Text style={styles.sectionLabel}>목표</Text>
             {data.goals.map((g, i) => (
               <Text key={i} style={styles.bullet}>• {g}</Text>
