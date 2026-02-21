@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Structure API (AI 파서)
+
+- **추가 파일:** `src/infra/parseActionsFromText.ts` — `parseActionsFromText(rawInput)`: OpenAI 호출, JSON만 파싱, fallback/truncated 처리.
+- **수정 파일:** `src/app/api/structure/route.ts` — raw 입력 그대로 파서에 전달, `orderActionsByRule` 추가, `buildWorkflowReason` 추가, 기존 응답 형식 유지.
+- **mobile:** 변경 없음. `POST /api/structure`에 `{ text }` 보내면 동일한 `StructuredOutput` 수신.
+
 ## Getting Started
 
 First, run the development server:
