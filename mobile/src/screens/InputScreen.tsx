@@ -62,6 +62,30 @@ export function InputScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <View style={styles.logoIcon}>
+            <Text style={styles.logoIconText}>✦</Text>
+          </View>
+          <Text style={styles.logoText}>StartNow</Text>
+        </View>
+        <View style={styles.headerRight}>
+          <View style={styles.pill}>
+            <Text style={styles.pillText}>AI Powered</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.historyBtn}
+            onPress={() => navigation.navigate("History")}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.historyIcon}>↻</Text>
+            <Text style={styles.historyBtnText}>History</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.divider} />
+
       <View style={styles.hero}>
         <Text style={styles.heroTitle}>텍스트를 워크플로우로</Text>
         <Text style={styles.heroDesc}>
@@ -71,6 +95,7 @@ export function InputScreen({ navigation }: Props) {
       <Text style={styles.inputLabel}>
         순서나 정리는 신경 쓰지 마세요. 생각나는 대로 적어 주세요.
       </Text>
+      <View style={styles.inputDivider} />
       <TextInput
         style={styles.input}
         placeholder="예: 빨래 돌리고, 밥 먹고, 공부해야 하는데..."
@@ -102,8 +127,76 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 48,
     backgroundColor: "#1C1C1E",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 28,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  logoIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#14B8A6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoIconText: {
+    fontSize: 18,
+    color: "#fff",
+  },
+  logoText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  pill: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 9999,
+  },
+  pillText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#fff",
+  },
+  historyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+  },
+  historyIcon: {
+    fontSize: 14,
+  },
+  historyBtnText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#fff",
+  },
+  divider: {
+    width: "100%",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.1)",
+    marginBottom: 24,
   },
   hero: {
     marginBottom: 24,
@@ -123,6 +216,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#8E8E93",
     marginBottom: 8,
+  },
+  inputDivider: {
+    width: "100%",
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    marginVertical: 24,
   },
   input: {
     backgroundColor: "#2C2C2E",
