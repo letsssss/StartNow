@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   parseActionsFromText,
+  estimateMinutesFromLabel,
   type ActionFromAI,
   type ParseActionsResult,
 } from "@/infra/parseActionsFromText";
@@ -70,8 +71,9 @@ export async function POST(request: Request) {
       result.actions.map((a) => a.text)
     );
     const ordered = orderActionsByRule(result.actions);
-    const actions = ordered.map((a) => ({ label: a.text, minutes: 15 }));
+    const actions = ordered.map((a) => ({ label: a.text, minutes: estimateMinutesFromLabel(a.text) }));
     const firstLabel = actions[0]?.label ?? "할 일";
+    const firstMinutes = actions[0]?.minutes ?? estimateMinutesFromLabel(firstLabel);
 
     const data = {
       title: rawInput.slice(0, 50).trim() || firstLabel || "제목",
@@ -81,7 +83,7 @@ export async function POST(request: Request) {
       actions,
       pickNow: {
         label: firstLabel,
-        minutes: 15,
+        minutes: firstMinutes,
         reason: result.intent === "prioritize" ? "우선순위 반영 첫 작업" : "첫 번째 할 일",
       },
       workflowReason: buildWorkflowReason(result),

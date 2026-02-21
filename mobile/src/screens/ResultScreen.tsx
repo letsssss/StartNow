@@ -4,6 +4,7 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   StyleSheet,
   Alert,
   Platform,
@@ -92,10 +93,19 @@ export function ResultScreen({ navigation }: Props) {
     });
   }, []);
 
+  const handleDismissInProgress = useCallback(() => {
+    setRunningStepId(null);
+    setInProgress(false);
+  }, []);
+
   const handleBack = useCallback(() => {
+    if (inProgress) {
+      handleDismissInProgress();
+      return;
+    }
     if (navigation.canGoBack()) navigation.goBack();
     else navigation.replace("Input");
-  }, [navigation]);
+  }, [navigation, inProgress, handleDismissInProgress]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -213,6 +223,7 @@ export function ResultScreen({ navigation }: Props) {
         style={styles.scroll}
         contentContainerStyle={[styles.content, inProgress && styles.contentWithBottomBar]}
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={inProgress ? handleDismissInProgress : undefined}
       >
         <Text style={styles.orderGuide}>
           지금 할 순서: 1) 확인 → 2) 지금 할 1개 선택 → 3) 시작
@@ -266,19 +277,24 @@ export function ResultScreen({ navigation }: Props) {
       </ScrollView>
 
       {inProgress ? (
-        <View style={styles.bottomActionBar}>
-          <Text style={styles.bottomActionBarLabel} numberOfLines={1}>
-            지금 하는 중: {runningStepId ? orderedSteps.find((s) => s.id === runningStepId)?.title ?? "" : ""}
-          </Text>
-          <View style={styles.bottomActionBarButtons}>
-            <TouchableOpacity style={[styles.endBtn, styles.completeBtn]} onPress={handleComplete}>
-              <Text style={styles.endBtnText}>완료</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.endBtn, styles.abortBtn]} onPress={handleAbort}>
-              <Text style={styles.endBtnTextAbort}>중단</Text>
-            </TouchableOpacity>
+        <>
+          <TouchableWithoutFeedback onPress={handleDismissInProgress}>
+            <View style={styles.dismissOverlay} />
+          </TouchableWithoutFeedback>
+          <View style={styles.bottomActionBar} pointerEvents="box-none">
+            <Text style={styles.bottomActionBarLabel} numberOfLines={1}>
+              지금 하는 중: {runningStepId ? orderedSteps.find((s) => s.id === runningStepId)?.title ?? "" : ""}
+            </Text>
+            <View style={styles.bottomActionBarButtons}>
+              <TouchableOpacity style={[styles.endBtn, styles.completeBtn]} onPress={handleComplete}>
+                <Text style={styles.endBtnText}>완료</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.endBtn, styles.abortBtn]} onPress={handleAbort}>
+                <Text style={styles.endBtnTextAbort}>중단</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </>
       ) : null}
 
       {toast ? (
@@ -409,6 +425,14 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: 20, paddingBottom: 24 },
   contentWithBottomBar: { paddingBottom: 100 },
+  dismissOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 100,
+    backgroundColor: "transparent",
+  },
   bottomActionBar: {
     position: "absolute",
     bottom: 0,

@@ -98,6 +98,41 @@ const NOTES_ENDINGS = [
   "이 순서가 가장 수월해요.",
 ];
 
+const MIN_MINUTES = 5;
+const MAX_MINUTES = 120;
+const DEFAULT_MINUTES = 20;
+const FALLBACK_MINUTES = 15;
+
+/**
+ * label 기준 현실적인 소요 시간(분) 추정.
+ * - 최소 5분, 최대 120분.
+ * - 추정 실패 시에만 15분 fallback.
+ */
+export function estimateMinutesFromLabel(label: string): number {
+  const t = (label || "").trim();
+  if (t.length === 0) return FALLBACK_MINUTES;
+
+  const lower = t.toLowerCase();
+
+  const waitingShort = /빨래|세탁|돌리기|건조|탈수|세탁기|전자레인지|끓이기\s*시작|요리\s*시작|담그기/;
+  if (waitingShort.test(t) || waitingShort.test(lower)) return clampToRange(10);
+
+  const mealPrepMove = /밥|먹기|식사|아침|점심|저녁|준비|이동|출발|도착|약\s*먹|화장실|샤워|양치|세수|머리\s*말리/;
+  if (mealPrepMove.test(t) || mealPrepMove.test(lower)) return clampToRange(25);
+
+  const studyWork = /공부|작업|과제|보고서|정리|회의|미팅|운동|헬스|요가|독서|영어|학습|코딩|개발|작성|제출/;
+  if (studyWork.test(t) || studyWork.test(lower)) return clampToRange(50);
+
+  const quick = /청소|쓰레기|설거지|빨래\s*개기|접기|짐\s*싸기/;
+  if (quick.test(t) || quick.test(lower)) return clampToRange(15);
+
+  return clampToRange(DEFAULT_MINUTES);
+}
+
+function clampToRange(minutes: number): number {
+  return Math.max(MIN_MINUTES, Math.min(MAX_MINUTES, minutes));
+}
+
 function validateWorkflowReason(notes: string, actions: ActionFromAI[]): boolean {
   if (!notes || notes.trim().length === 0) return false;
   if (notes.length > MAX_NOTES_LENGTH) return false;
