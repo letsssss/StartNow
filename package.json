@@ -1,0 +1,9 @@
+{
+  "name": "startnow",
+  "private": true,
+  "scripts": {
+    "api": "cd api && npx next dev -H 0.0.0.0",
+    "mobile": "cd mobile && npx expo start -c",
+    "qr": "cd mobile && npx expo start -c"
+  }
+}
