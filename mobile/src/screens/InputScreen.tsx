@@ -62,11 +62,19 @@ export function InputScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>할 일/고민을 적어 주세요</Text>
+      <View style={styles.hero}>
+        <Text style={styles.heroTitle}>텍스트를 워크플로우로</Text>
+        <Text style={styles.heroDesc}>
+          AI가 입력한 문장을 분석해 논리적인 실행 흐름을 자동 생성합니다.
+        </Text>
+      </View>
+      <Text style={styles.inputLabel}>
+        순서나 정리는 신경 쓰지 마세요. 생각나는 대로 적어 주세요.
+      </Text>
       <TextInput
         style={styles.input}
-        placeholder="예: 내일 발표 준비해야 하는데..."
-        placeholderTextColor="#999"
+        placeholder="예: 빨래 돌리고, 밥 먹고, 공부해야 하는데..."
+        placeholderTextColor="#8E8E93"
         multiline
         value={text}
         onChangeText={setText}
@@ -80,10 +88,10 @@ export function InputScreen({ navigation }: Props) {
         {loading ? (
           <>
             <ActivityIndicator color="#fff" style={styles.spinner} />
-            <Text style={styles.buttonText}>정리 중...</Text>
+            <Text style={styles.buttonText}>생성 중...</Text>
           </>
         ) : (
-          <Text style={styles.buttonText}>정리하기</Text>
+          <Text style={styles.buttonText}>AI 워크플로우 생성</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -94,23 +102,44 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingTop: 60,
-    backgroundColor: "#fff",
+    paddingTop: 40,
+    backgroundColor: "#1C1C1E",
   },
-  label: { fontSize: 16, fontWeight: "600", marginBottom: 8 },
+  hero: {
+    marginBottom: 24,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#fff",
+    marginBottom: 8,
+  },
+  heroDesc: {
+    fontSize: 15,
+    color: "#8E8E93",
+    lineHeight: 22,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: "#8E8E93",
+    marginBottom: 8,
+  },
   input: {
+    backgroundColor: "#2C2C2E",
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
+    borderColor: "#3A3A3C",
+    borderRadius: 12,
+    padding: 14,
     minHeight: 120,
     textAlignVertical: "top",
     marginBottom: 16,
+    fontSize: 16,
+    color: "#fff",
   },
   button: {
     backgroundColor: "#007AFF",
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
