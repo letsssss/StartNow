@@ -9,6 +9,8 @@ type Props = {
   onToggleDone?: (id: string) => void;
   onStartPickNow?: () => void;
   onReorderMiddle?: (newMiddle: WorkflowStep[]) => void;
+  inProgress?: boolean;
+  activeStepTitle?: string;
 };
 
 export function WorkflowTimeline({
@@ -16,27 +18,36 @@ export function WorkflowTimeline({
   onToggleDone,
   onStartPickNow,
   onReorderMiddle,
+  inProgress = false,
+  activeStepTitle,
 }: Props) {
   const startStep = steps[0];
   const endStep = steps[steps.length - 1];
   const middleSteps = steps.filter((s) => s.kind === "step");
+  const dragEnabled = !inProgress && !!onReorderMiddle;
 
   const handleDragEnd = ({ data }: { data: WorkflowStep[] }) => {
     onReorderMiddle?.(data);
   };
 
-  const renderItem = ({ item, drag, isActive, getIndex }: RenderItemParams<WorkflowStep>) => (
-    <View style={styles.cardRow}>
-      <WorkflowCard
-        step={item}
-        onToggleDone={onToggleDone}
-        showStartButton={getIndex() === 0 && !!onStartPickNow}
-        onStart={onStartPickNow}
-        onDrag={drag}
-        isActive={isActive}
-      />
-    </View>
-  );
+  const renderItem = ({ item, drag, isActive, getIndex }: RenderItemParams<WorkflowStep>) => {
+    const isCurrentStep = inProgress && !!activeStepTitle && item.title === activeStepTitle;
+    const dimmed = inProgress && item.kind === "step" && !isCurrentStep;
+    return (
+      <View style={styles.cardRow}>
+        <WorkflowCard
+          step={item}
+          onToggleDone={onToggleDone}
+          showStartButton={getIndex() === 0 && !!onStartPickNow && !inProgress}
+          onStart={onStartPickNow}
+          onDrag={dragEnabled ? drag : undefined}
+          isActive={isActive}
+          isCurrentStep={isCurrentStep}
+          dimmed={dimmed}
+        />
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -51,6 +62,7 @@ export function WorkflowTimeline({
           onDragEnd={handleDragEnd}
           renderItem={renderItem}
           scrollEnabled={false}
+          activationDistance={dragEnabled ? 10 : 9999}
         />
         <View style={styles.cardRow}>
           <WorkflowCard step={endStep} onToggleDone={onToggleDone} showStartButton={false} />

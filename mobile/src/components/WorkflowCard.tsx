@@ -17,6 +17,8 @@ type Props = {
   onStart?: () => void;
   onDrag?: () => void;
   isActive?: boolean;
+  isCurrentStep?: boolean;
+  dimmed?: boolean;
 };
 
 export function WorkflowCard({
@@ -26,10 +28,12 @@ export function WorkflowCard({
   onStart,
   onDrag,
   isActive,
+  isCurrentStep,
+  dimmed,
 }: Props) {
   const isStartOrEnd = step.kind === "start" || step.kind === "end";
   const subtitle = step.subtitle ?? null;
-  const draggable = step.kind === "step" && !!onDrag;
+  const draggable = step.kind === "step" && !!onDrag && !dimmed;
 
   const handlePress = () => {
     if (step.kind === "step" && onToggleDone) onToggleDone(step.id);
@@ -42,12 +46,14 @@ export function WorkflowCard({
         isStartOrEnd && styles.cardHighlight,
         step.done && styles.cardDone,
         isActive && styles.cardActive,
+        isCurrentStep && styles.cardCurrentStep,
+        dimmed && styles.cardDimmed,
       ]}
       onPress={handlePress}
       onLongPress={draggable ? onDrag : undefined}
       delayLongPress={200}
       activeOpacity={step.kind === "step" ? 0.7 : 1}
-      disabled={step.kind !== "step"}
+      disabled={step.kind !== "step" || dimmed}
     >
       <View style={styles.iconBadge}>
         <Text style={styles.iconText}>{ICON_MAP[step.icon]}</Text>
@@ -94,6 +100,11 @@ const styles = StyleSheet.create({
   },
   cardDone: { opacity: 0.75 },
   cardActive: { opacity: 0.92, transform: [{ scale: 1.02 }] },
+  cardCurrentStep: {
+    backgroundColor: "rgba(52,199,89,0.25)",
+    borderColor: "rgba(52,199,89,0.5)",
+  },
+  cardDimmed: { opacity: 0.45 },
   iconBadge: {
     width: 36,
     height: 36,

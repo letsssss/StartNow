@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useLayoutEffect, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useLayoutEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -30,6 +30,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "Result">;
 export function ResultScreen({ navigation }: Props) {
   const data = getLastStructuredResult();
   const [toast, setToast] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [inProgress, setInProgress] = useState(false);
   const [stepDoneMap, setStepDoneMap] = useState<Record<string, boolean>>({});
   const [orderedSteps, setOrderedSteps] = useState(() =>
@@ -87,6 +88,21 @@ export function ResultScreen({ navigation }: Props) {
     }
   }, []);
 
+  useEffect(() => {
+    if (!toast) return;
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null);
+      toastTimeoutRef.current = null;
+    }, 2000);
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+        toastTimeoutRef.current = null;
+      }
+    };
+  }, [toast]);
+
   const handleComplete = () => {
     setLastRecordMessage("완료했어요");
     setToast("완료했어요");
@@ -133,11 +149,63 @@ export function ResultScreen({ navigation }: Props) {
         <Text style={[styles.step, step >= 3 && styles.stepDone]}>4 체크/기록</Text>
       </View>
 
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.content, inProgress && styles.contentWithBottomBar]}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.orderGuide}>
+          지금 할 순서: 1) 확인 → 2) 지금 할 1개 선택 → 3) 시작
+        </Text>
+        <View style={styles.timelineWrap}>
+          <WorkflowTimeline
+            steps={stepsWithDone}
+            onToggleDone={handleToggleStepDone}
+            onStartPickNow={handleStartPickNow}
+            onReorderMiddle={handleReorderMiddle}
+            inProgress={inProgress}
+            activeStepTitle={data.pickNow.label}
+          />
+        </View>
+
+        <Text style={styles.sectionLabel}>순서를 이렇게 잡았어요</Text>
+        <Text style={styles.workflowReason}>{data.workflowReason}</Text>
+
+        <Text style={styles.sectionLabel}>목표</Text>
+        {data.goals.map((g, i) => (
+          <Text key={i} style={styles.bullet}>• {g}</Text>
+        ))}
+        {data.branches.length > 0 && (
+          <>
+            <Text style={styles.sectionLabel}>가지 생각</Text>
+            {data.branches.map((b, i) => (
+              <Text key={i} style={styles.bullet}>• {b}</Text>
+            ))}
+          </>
+        )}
+        {data.blockers.length > 0 && (
+          <>
+            <Text style={styles.sectionLabel}>방해 요인</Text>
+            {data.blockers.map((b, i) => (
+              <Text key={i} style={styles.bullet}>• {b}</Text>
+            ))}
+          </>
+        )}
+        <Text style={styles.sectionLabel}>행동 3개</Text>
+        {data.actions.map((a, i) => (
+          <Text key={i} style={styles.bullet}>
+            • {a.label} ({a.minutes}분)
+          </Text>
+        ))}
+        <View style={styles.spacer} />
+      </ScrollView>
+
       {inProgress ? (
-        <View style={styles.inProgressBlock}>
-          <Text style={styles.inProgressLabel}>진행 중</Text>
-          <Text style={styles.inProgressTitle}>{data.pickNow.label}</Text>
-          <View style={styles.endButtons}>
+        <View style={styles.bottomActionBar}>
+          <Text style={styles.bottomActionBarLabel} numberOfLines={1}>
+            지금 하는 중: {data.pickNow.label}
+          </Text>
+          <View style={styles.bottomActionBarButtons}>
             <TouchableOpacity style={[styles.endBtn, styles.completeBtn]} onPress={handleComplete}>
               <Text style={styles.endBtnText}>완료</Text>
             </TouchableOpacity>
@@ -146,64 +214,13 @@ export function ResultScreen({ navigation }: Props) {
             </TouchableOpacity>
           </View>
         </View>
-      ) : (
-        <>
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.content}
-            showsVerticalScrollIndicator={false}
-          >
-            <Text style={styles.orderGuide}>
-              지금 할 순서: 1) 확인 → 2) 지금 할 1개 선택 → 3) 시작
-            </Text>
-            <View style={styles.timelineWrap}>
-              <WorkflowTimeline
-                steps={stepsWithDone}
-                onToggleDone={handleToggleStepDone}
-                onStartPickNow={handleStartPickNow}
-                onReorderMiddle={handleReorderMiddle}
-              />
-            </View>
+      ) : null}
 
-            <Text style={styles.sectionLabel}>순서를 이렇게 잡았어요</Text>
-            <Text style={styles.workflowReason}>{data.workflowReason}</Text>
-
-            <Text style={styles.sectionLabel}>목표</Text>
-            {data.goals.map((g, i) => (
-              <Text key={i} style={styles.bullet}>• {g}</Text>
-            ))}
-            {data.branches.length > 0 && (
-              <>
-                <Text style={styles.sectionLabel}>가지 생각</Text>
-                {data.branches.map((b, i) => (
-                  <Text key={i} style={styles.bullet}>• {b}</Text>
-                ))}
-              </>
-            )}
-            {data.blockers.length > 0 && (
-              <>
-                <Text style={styles.sectionLabel}>방해 요인</Text>
-                {data.blockers.map((b, i) => (
-                  <Text key={i} style={styles.bullet}>• {b}</Text>
-                ))}
-              </>
-            )}
-            <Text style={styles.sectionLabel}>행동 3개</Text>
-            {data.actions.map((a, i) => (
-              <Text key={i} style={styles.bullet}>
-                • {a.label} ({a.minutes}분)
-              </Text>
-            ))}
-            <View style={styles.spacer} />
-          </ScrollView>
-
-          {toast ? (
-            <View style={styles.toast}>
-              <Text style={styles.toastText}>{toast}</Text>
-            </View>
-          ) : null}
-        </>
-      )}
+      {toast ? (
+        <View style={styles.toast}>
+          <Text style={styles.toastText}>{toast}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -229,10 +246,6 @@ const styles = StyleSheet.create({
   step: { fontSize: 11, color: "#999" },
   stepDone: { color: "#007AFF", fontWeight: "600" },
   stepArrow: { fontSize: 10, color: "#ccc" },
-  inProgressBlock: { flex: 1, padding: 20, paddingTop: 24 },
-  inProgressLabel: { fontSize: 13, color: "#666", marginBottom: 4 },
-  inProgressTitle: { fontSize: 22, fontWeight: "700", marginBottom: 24 },
-  endButtons: { flexDirection: "row", gap: 12 },
   endBtn: { flex: 1, paddingVertical: 14, borderRadius: 10, alignItems: "center" },
   completeBtn: { backgroundColor: "#34C759" },
   abortBtn: { backgroundColor: "#E5E5EA" },
@@ -240,6 +253,25 @@ const styles = StyleSheet.create({
   endBtnTextAbort: { color: "#000", fontSize: 16, fontWeight: "600" },
   scroll: { flex: 1 },
   content: { padding: 20, paddingBottom: 24 },
+  contentWithBottomBar: { paddingBottom: 100 },
+  bottomActionBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#1C1C1E",
+    borderTopWidth: 1,
+    borderTopColor: "#3A3A3C",
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
+  },
+  bottomActionBarLabel: {
+    fontSize: 13,
+    color: "#8E8E93",
+    marginBottom: 10,
+  },
+  bottomActionBarButtons: { flexDirection: "row", gap: 12 },
   empty: { padding: 20, fontSize: 16, color: "#666" },
   orderGuide: { fontSize: 13, color: "#8E8E93", marginBottom: 12 },
   timelineWrap: {
