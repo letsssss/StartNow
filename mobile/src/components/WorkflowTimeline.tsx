@@ -33,12 +33,16 @@ export function WorkflowTimeline({
   const renderItem = ({ item, drag, isActive, getIndex }: RenderItemParams<WorkflowStep>) => {
     const isCurrentStep = inProgress && !!activeStepTitle && item.title === activeStepTitle;
     const dimmed = inProgress && item.kind === "step" && !isCurrentStep;
+    const showStart =
+      !!onStartPickNow &&
+      !item.done &&
+      (inProgress ? isCurrentStep : getIndex() === 0);
     return (
       <View style={styles.cardRow}>
         <WorkflowCard
           step={item}
           onToggleDone={onToggleDone}
-          showStartButton={getIndex() === 0 && !!onStartPickNow && !inProgress}
+          showStartButton={showStart}
           onStart={onStartPickNow}
           onDrag={dragEnabled ? drag : undefined}
           isActive={isActive}

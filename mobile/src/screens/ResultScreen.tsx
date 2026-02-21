@@ -32,6 +32,7 @@ export function ResultScreen({ navigation }: Props) {
   const [toast, setToast] = useState<string | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [inProgress, setInProgress] = useState(false);
+  const [activeStepId, setActiveStepId] = useState<string | null>(null);
   const [stepDoneMap, setStepDoneMap] = useState<Record<string, boolean>>({});
   const [orderedSteps, setOrderedSteps] = useState(() =>
     data ? normalizeToWorkflowSteps(data) : []
@@ -54,7 +55,13 @@ export function ResultScreen({ navigation }: Props) {
     setStepDoneMap((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleStartPickNow = () => setInProgress(true);
+  const handleStartPickNow = () => {
+    if (!data) return;
+    const middleSteps = orderedSteps.filter((s) => s.kind === "step");
+    const current = middleSteps.find((s) => s.title === data.pickNow.label) ?? middleSteps[0];
+    setActiveStepId(current?.id ?? null);
+    setInProgress(true);
+  };
 
   const handleReorderMiddle = useCallback((newMiddle: typeof orderedSteps) => {
     setOrderedSteps((prev) => {
@@ -104,9 +111,28 @@ export function ResultScreen({ navigation }: Props) {
   }, [toast]);
 
   const handleComplete = () => {
+    const middleSteps = orderedSteps.filter((s) => s.kind === "step");
+    const currentIndex = middleSteps.findIndex((s) => s.id === activeStepId);
+    const currentStep = currentIndex >= 0 ? middleSteps[currentIndex] : null;
+    const nextStep =
+      currentIndex >= 0 && currentIndex + 1 < middleSteps.length
+        ? middleSteps[currentIndex + 1]
+        : null;
+
+    if (currentStep) {
+      setStepDoneMap((prev) => ({ ...prev, [currentStep.id]: true }));
+    }
+
+    if (nextStep) {
+      setActiveStepId(nextStep.id);
+      setInProgress(true);
+    } else {
+      setActiveStepId(null);
+      setInProgress(false);
+    }
+
     setLastRecordMessage("완료했어요");
     setToast("완료했어요");
-    setInProgress(false);
   };
 
   const handleAbort = () => {
@@ -119,6 +145,7 @@ export function ResultScreen({ navigation }: Props) {
           onPress: () => {
             setLastRecordMessage(`중단 (${r.label})`);
             setToast(`중단 (${r.label})`);
+            setActiveStepId(null);
             setInProgress(false);
           },
         })),
@@ -126,6 +153,11 @@ export function ResultScreen({ navigation }: Props) {
       ]
     );
   };
+
+  const activeStepTitle =
+    inProgress && activeStepId
+      ? orderedSteps.find((s) => s.id === activeStepId)?.title ?? data?.pickNow?.label
+      : data?.pickNow?.label ?? "";
 
   if (!data) {
     return (
@@ -164,7 +196,7 @@ export function ResultScreen({ navigation }: Props) {
             onStartPickNow={handleStartPickNow}
             onReorderMiddle={handleReorderMiddle}
             inProgress={inProgress}
-            activeStepTitle={data.pickNow.label}
+            activeStepTitle={activeStepTitle}
           />
         </View>
 
@@ -203,7 +235,7 @@ export function ResultScreen({ navigation }: Props) {
       {inProgress ? (
         <View style={styles.bottomActionBar}>
           <Text style={styles.bottomActionBarLabel} numberOfLines={1}>
-            지금 하는 중: {data.pickNow.label}
+            지금 하는 중: {activeStepTitle}
           </Text>
           <View style={styles.bottomActionBarButtons}>
             <TouchableOpacity style={[styles.endBtn, styles.completeBtn]} onPress={handleComplete}>
