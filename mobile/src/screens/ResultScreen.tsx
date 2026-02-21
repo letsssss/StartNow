@@ -205,29 +205,17 @@ export function ResultScreen({ navigation }: Props) {
     );
   }
 
-  const step = inProgress ? 3 : 2;
-
+  // 제거된 단계 안내 UI (온보딩 재사용 시 복원 가능):
+  // 1) 상단: "1 구조화 완료 → 2 지금 할 1개 선택 → 3 실행 시작 → 4 체크/기록"
+  // 2) 스크롤 상단: "지금 할 순서: 1) 확인 → 2) 지금 할 1개 선택 → 3) 시작"
   return (
     <View style={styles.container}>
-      <View style={styles.steps}>
-        <Text style={[styles.step, 1 <= step && styles.stepDone]}>1 구조화 완료</Text>
-        <Text style={styles.stepArrow}>→</Text>
-        <Text style={[styles.step, 2 <= step && styles.stepDone]}>2 지금 할 1개 선택</Text>
-        <Text style={styles.stepArrow}>→</Text>
-        <Text style={[styles.step, 3 <= step && styles.stepDone]}>3 실행 시작</Text>
-        <Text style={styles.stepArrow}>→</Text>
-        <Text style={[styles.step, step >= 3 && styles.stepDone]}>4 체크/기록</Text>
-      </View>
-
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.content, inProgress && styles.contentWithBottomBar]}
         showsVerticalScrollIndicator={false}
         onScrollBeginDrag={inProgress ? handleDismissInProgress : undefined}
       >
-        <Text style={styles.orderGuide}>
-          지금 할 순서: 1) 확인 → 2) 지금 할 1개 선택 → 3) 시작
-        </Text>
         <View style={styles.timelineWrap}>
           <WorkflowTimeline
             steps={stepsWithDone}
@@ -404,19 +392,7 @@ const styles = StyleSheet.create({
     marginLeft: Platform.OS === "android" ? 8 : 0,
   },
   headerBackText: { fontSize: 16, color: "#007AFF" },
-  steps: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  step: { fontSize: 11, color: "#999" },
-  stepDone: { color: "#007AFF", fontWeight: "600" },
-  stepArrow: { fontSize: 10, color: "#ccc" },
+  // [온보딩 재사용] 제거한 단계 안내 UI용 스타일: steps, step, stepDone, stepArrow, orderGuide
   endBtn: { flex: 1, paddingVertical: 14, borderRadius: 10, alignItems: "center" },
   completeBtn: { backgroundColor: "#34C759" },
   abortBtn: { backgroundColor: "#E5E5EA" },
@@ -452,7 +428,6 @@ const styles = StyleSheet.create({
   },
   bottomActionBarButtons: { flexDirection: "row", gap: 12 },
   empty: { padding: 20, fontSize: 16, color: "#666" },
-  orderGuide: { fontSize: 13, color: "#8E8E93", marginBottom: 12 },
   timelineWrap: {
     backgroundColor: "#1C1C1E",
     borderRadius: 16,
