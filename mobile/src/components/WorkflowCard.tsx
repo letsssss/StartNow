@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
 import type { WorkflowStep, WorkflowStepIcon } from "../domain/workflow";
 
 const ICON_MAP: Record<WorkflowStepIcon, string> = {
@@ -10,6 +10,8 @@ const ICON_MAP: Record<WorkflowStepIcon, string> = {
   check: "✓",
 };
 
+const STEP_COMPLETE_DURATION_MS = 400;
+
 type Props = {
   step: WorkflowStep;
   onToggleDone?: (id: string) => void;
@@ -19,6 +21,7 @@ type Props = {
   isActive?: boolean;
   isCurrentStep?: boolean;
   dimmed?: boolean;
+  isJustCompleted?: boolean;
 };
 
 export function WorkflowCard({
@@ -30,16 +33,46 @@ export function WorkflowCard({
   isActive,
   isCurrentStep,
   dimmed,
+  isJustCompleted,
 }: Props) {
   const isStartOrEnd = step.kind === "start" || step.kind === "end";
   const subtitle = step.subtitle ?? null;
   const draggable = step.kind === "step" && !!onDrag && !dimmed;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const checkScale = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (step.done && !isJustCompleted) checkScale.setValue(1);
+  }, [step.done, isJustCompleted, checkScale]);
+
+  useEffect(() => {
+    if (!isJustCompleted || step.kind !== "step") return;
+    scaleAnim.setValue(1);
+    checkScale.setValue(0);
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 1.03,
+        duration: STEP_COMPLETE_DURATION_MS / 2,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: STEP_COMPLETE_DURATION_MS / 2,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    Animated.timing(checkScale, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [isJustCompleted, step.kind, scaleAnim, checkScale]);
 
   const handlePress = () => {
     if (step.kind === "step" && onToggleDone) onToggleDone(step.id);
   };
 
-  return (
+  const cardContent = (
     <TouchableOpacity
       style={[
         styles.card,
@@ -73,12 +106,19 @@ export function WorkflowCard({
         <Text style={styles.orderText}>{String(step.order).padStart(2, "0")}</Text>
       </View>
       {step.kind === "step" && step.done ? (
-        <View style={styles.doneMark}>
+        <Animated.View style={[styles.doneMark, { opacity: checkScale, transform: [{ scale: checkScale }] }]}>
           <Text style={styles.doneMarkText}>✓</Text>
-        </View>
+        </Animated.View>
       ) : null}
     </TouchableOpacity>
   );
+
+  if (step.kind === "step" && (isJustCompleted ?? false)) {
+    return (
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>{cardContent}</Animated.View>
+    );
+  }
+  return <View>{cardContent}</View>;
 }
 
 const styles = StyleSheet.create({

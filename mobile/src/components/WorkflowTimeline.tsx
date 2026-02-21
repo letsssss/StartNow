@@ -11,6 +11,7 @@ type Props = {
   onReorderMiddle?: (newMiddle: WorkflowStep[]) => void;
   inProgress?: boolean;
   activeStepTitle?: string;
+  lastCompletedStepId?: string | null;
 };
 
 export function WorkflowTimeline({
@@ -20,6 +21,7 @@ export function WorkflowTimeline({
   onReorderMiddle,
   inProgress = false,
   activeStepTitle,
+  lastCompletedStepId,
 }: Props) {
   const startStep = steps[0];
   const endStep = steps[steps.length - 1];
@@ -48,6 +50,7 @@ export function WorkflowTimeline({
           isActive={isActive}
           isCurrentStep={isCurrentStep}
           dimmed={dimmed}
+          isJustCompleted={item.id === lastCompletedStepId}
         />
       </View>
     );

@@ -7,7 +7,11 @@ import {
   StyleSheet,
   Alert,
   Platform,
+  Animated,
+  Dimensions,
 } from "react-native";
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 import {
   getLastStructuredResult,
   getLastRecordMessage,
@@ -38,10 +42,19 @@ export function ResultScreen({ navigation }: Props) {
   const [orderedSteps, setOrderedSteps] = useState(() =>
     data ? normalizeToWorkflowSteps(data) : []
   );
+  const [workflowCompleted, setWorkflowCompleted] = useState(false);
+  const [lastCompletedStepId, setLastCompletedStepId] = useState<string | null>(null);
+  const stepCompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (data) setOrderedSteps(normalizeToWorkflowSteps(data));
   }, [data]);
+
+  useEffect(() => {
+    return () => {
+      if (stepCompleteTimeoutRef.current) clearTimeout(stepCompleteTimeoutRef.current);
+    };
+  }, []);
 
   const stepsWithDone = useMemo(
     () =>
@@ -128,12 +141,19 @@ export function ResultScreen({ navigation }: Props) {
 
     if (runningStep) {
       setStepDoneMap((prev) => ({ ...prev, [runningStep.id]: true }));
+      setLastCompletedStepId(runningStep.id);
+      if (stepCompleteTimeoutRef.current) clearTimeout(stepCompleteTimeoutRef.current);
+      stepCompleteTimeoutRef.current = setTimeout(() => {
+        setLastCompletedStepId(null);
+        stepCompleteTimeoutRef.current = null;
+      }, 500);
     }
 
     if (nextStep) {
       setActiveStepId(nextStep.id);
     } else {
       setActiveStepId(null);
+      setWorkflowCompleted(true);
     }
     setRunningStepId(null);
     setInProgress(false);
@@ -204,6 +224,7 @@ export function ResultScreen({ navigation }: Props) {
             onStartPickNow={handleStartPickNow}
             onReorderMiddle={handleReorderMiddle}
             inProgress={inProgress}
+            lastCompletedStepId={lastCompletedStepId}
             activeStepTitle={
               inProgress
                 ? (orderedSteps.find((s) => s.id === runningStepId)?.title ?? "")
@@ -265,6 +286,96 @@ export function ResultScreen({ navigation }: Props) {
           <Text style={styles.toastText}>{toast}</Text>
         </View>
       ) : null}
+
+      {workflowCompleted ? (
+        <WorkflowCompleteEffect onDone={() => setWorkflowCompleted(false)} />
+      ) : null}
+    </View>
+  );
+}
+
+const SPARKLE_POSITIONS = [
+  { x: 0.15, y: 0.28, emoji: "✨", size: 26 },
+  { x: 0.5, y: 0.22, emoji: "🌟", size: 40 },
+  { x: 0.85, y: 0.3, emoji: "✨", size: 24 },
+  { x: 0.25, y: 0.38, emoji: "⭐", size: 22 },
+  { x: 0.75, y: 0.36, emoji: "✨", size: 28 },
+  { x: 0.1, y: 0.45, emoji: "🌟", size: 22 },
+  { x: 0.9, y: 0.44, emoji: "⭐", size: 24 },
+  { x: 0.35, y: 0.5, emoji: "✨", size: 20 },
+  { x: 0.65, y: 0.48, emoji: "🎉", size: 28 },
+];
+
+const FULL_COMPLETE_DURATION_MS = 1500;
+
+function WorkflowCompleteEffect({ onDone }: { onDone: () => void }) {
+  const sparkleOpacity = useRef(new Animated.Value(1)).current;
+  const messageOpacity = useRef(new Animated.Value(0)).current;
+  const messageScale = useRef(new Animated.Value(0.7)).current;
+  const fadeDuration = 400;
+  const fadeStartDelay = FULL_COMPLETE_DURATION_MS - fadeDuration;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(messageOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(messageScale, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    const timer = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(sparkleOpacity, {
+          toValue: 0,
+          duration: fadeDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(messageOpacity, {
+          toValue: 0,
+          duration: fadeDuration,
+          useNativeDriver: true,
+        }),
+      ]).start(() => onDone());
+    }, fadeStartDelay);
+
+    return () => clearTimeout(timer);
+  }, [sparkleOpacity, messageOpacity, messageScale, onDone]);
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Animated.View
+        style={[
+          styles.fullCompleteMessage,
+          {
+            opacity: messageOpacity,
+            transform: [{ scale: messageScale }],
+          },
+        ]}
+      >
+        <Text style={styles.fullCompleteMessageText}>오늘 할 일 완료 🎉</Text>
+        <Text style={styles.fullCompleteMessageSub}>워크플로우를 끝냈어요</Text>
+      </Animated.View>
+      {SPARKLE_POSITIONS.map((p, i) => (
+        <Animated.View
+          key={i}
+          style={[
+            styles.sparkleWrap,
+            {
+              left: SCREEN_WIDTH * p.x - 14,
+              top: SCREEN_HEIGHT * p.y - 14,
+              opacity: sparkleOpacity,
+            },
+          ]}
+        >
+          <Text style={[styles.sparkleEmoji, { fontSize: p.size }]}>{p.emoji}</Text>
+        </Animated.View>
+      ))}
     </View>
   );
 }
@@ -348,4 +459,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   toastText: { color: "#fff", fontSize: 14 },
+  sparkleWrap: {
+    position: "absolute",
+  },
+  sparkleEmoji: {},
+  fullCompleteMessage: {
+    position: "absolute",
+    left: SCREEN_WIDTH / 2 - 120,
+    top: SCREEN_HEIGHT * 0.38 - 40,
+    width: 240,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+  },
+  fullCompleteMessageText: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#1C1C1E",
+    marginBottom: 6,
+  },
+  fullCompleteMessageSub: {
+    fontSize: 15,
+    color: "#666",
+  },
 });
