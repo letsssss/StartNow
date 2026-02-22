@@ -20,6 +20,7 @@ import {
 } from "../state/session";
 import { normalizeToWorkflowSteps, mergeWithStartEnd } from "../domain/workflow";
 import { WorkflowTimeline } from "../components/WorkflowTimeline";
+import { appendHistory } from "../lib/historyStorage";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
 
@@ -164,6 +165,14 @@ export function ResultScreen({ navigation }: Props) {
     } else {
       setActiveStepId(null);
       setWorkflowCompleted(true);
+      const now = new Date();
+      const pad2 = (n: number) => String(n).padStart(2, "0");
+      const completedDate = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+      const time = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+      const title = data?.pickNow?.label?.trim() || "Workflow";
+      const steps = Math.max(0, middleSteps.length);
+      appendHistory({ id: String(Date.now()), completedDate, time, title, steps }).catch(() => {});
+      if (__DEV__) console.log("saved history");
     }
     setRunningStepId(null);
     setInProgress(false);

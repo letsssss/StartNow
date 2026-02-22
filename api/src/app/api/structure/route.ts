@@ -15,12 +15,6 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "http://localhost:8083",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-} as const;
-
 const PARALLEL_KEYWORDS = /세탁|돌리기|빨래|세탁기|건조|탈수/;
 const PHYSIOLOGICAL_KEYWORDS = /밥|먹기|약|화장실|샤워|머리\s*말리|양치|세수/;
 
@@ -46,10 +40,7 @@ function buildWorkflowReason(result: ParseActionsResult): string {
 }
 
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: CORS_HEADERS,
-  });
+  return new NextResponse(null, { status: 204 });
 }
 
 export async function GET() {

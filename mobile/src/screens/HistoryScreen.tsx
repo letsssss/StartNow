@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -6,27 +6,12 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
+import { loadHistory, type HistoryRecord } from "../lib/historyStorage";
 
 type Props = NativeStackScreenProps<RootStackParamList, "History">;
-
-type Session = {
-  id: string;
-  completedDate: string;
-  title: string;
-  steps: number;
-  time: string;
-};
-
-const mockSessions: Session[] = [
-  { id: "1", completedDate: "2026-02-16", title: "Morning Routine", steps: 5, time: "16:30" },
-  { id: "2", completedDate: "2026-02-18", title: "Deep Work Block", steps: 3, time: "23:15" },
-  { id: "3", completedDate: "2026-02-19", title: "Evening Review", steps: 4, time: "06:14" },
-  { id: "4", completedDate: "2026-02-20", title: "Morning Routine", steps: 5, time: "16:30" },
-  { id: "5", completedDate: "2026-02-21", title: "Deep Work Block", steps: 3, time: "23:15" },
-  { id: "6", completedDate: "2026-02-22", title: "Evening Review", steps: 4, time: "06:14" },
-];
 
 function pad2(n: number) {
   return n.toString().padStart(2, "0");
@@ -73,26 +58,33 @@ export function HistoryScreen({ navigation }: Props) {
     return d;
   }, []);
 
+  const [sessions, setSessions] = useState<HistoryRecord[]>([]);
   const [cursorMonth, setCursorMonth] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1)
   );
   const [selectedDate, setSelectedDate] = useState<string>(() => toYMD(today));
 
-  const completedSet = useMemo(
-    () => new Set(mockSessions.map((s) => s.completedDate)),
-    []
+  useFocusEffect(
+    useCallback(() => {
+      loadHistory().then(setSessions);
+    }, [])
   );
 
-  const totalCount = mockSessions.length;
+  const completedSet = useMemo(
+    () => new Set(sessions.map((s) => s.completedDate)),
+    [sessions]
+  );
+
+  const totalCount = sessions.length;
 
   const weeklyCount = useMemo(() => {
     const start = startOfWeekMonday(today);
     const end = addDays(start, 7);
-    return mockSessions.filter((s) => {
+    return sessions.filter((s) => {
       const d = parseYMD(s.completedDate);
       return d >= start && d < end;
     }).length;
-  }, [today]);
+  }, [today, sessions]);
 
   const streakDays = useMemo(() => {
     let streak = 0;
@@ -105,8 +97,8 @@ export function HistoryScreen({ navigation }: Props) {
   }, [today, completedSet]);
 
   const sessionsForSelected = useMemo(
-    () => mockSessions.filter((s) => s.completedDate === selectedDate),
-    [selectedDate]
+    () => sessions.filter((s) => s.completedDate === selectedDate),
+    [sessions, selectedDate]
   );
 
   const monthLabel = useMemo(() => {

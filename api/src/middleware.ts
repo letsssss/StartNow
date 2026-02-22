@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const CORS_ORIGINS = [
+const CORS_ORIGINS: string[] = [
+  "http://localhost:8081",
   "http://localhost:8083",
   "http://localhost:19006",
-  "http://localhost:19000",
+  "http://192.168.0.2:8081",
+  "http://192.168.0.2:8083",
 ];
 const CORS_METHODS = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
 const CORS_HEADERS = "Content-Type, Authorization";
 
 function corsHeaders(origin: string | null): Headers {
   const h = new Headers();
-  const allowOrigin =
-    origin && CORS_ORIGINS.includes(origin) ? origin : CORS_ORIGINS[0];
-  h.set("Access-Control-Allow-Origin", allowOrigin);
+  if (origin && CORS_ORIGINS.includes(origin)) {
+    h.set("Access-Control-Allow-Origin", origin);
+  }
   h.set("Access-Control-Allow-Methods", CORS_METHODS);
   h.set("Access-Control-Allow-Headers", CORS_HEADERS);
+  h.set("Access-Control-Allow-Credentials", "true");
   return h;
 }
 
