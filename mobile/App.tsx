@@ -26,7 +26,7 @@ export default function App() {
         >
           <Stack.Screen name="Input" component={InputScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Result" component={ResultScreen} options={{ title: "결과" }} />
-          <Stack.Screen name="History" component={HistoryScreen} options={{ title: "History" }} />
+          <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>
