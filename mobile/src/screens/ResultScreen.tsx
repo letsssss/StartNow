@@ -20,7 +20,7 @@ import {
 } from "../state/session";
 import { normalizeToWorkflowSteps, mergeWithStartEnd } from "../domain/workflow";
 import { WorkflowTimeline } from "../components/WorkflowTimeline";
-import { appendHistory, loadHistory, type ResultData } from "../lib/historyStorage";
+import { appendHistory, loadHistory, upsertHistoryRecord, type ResultData } from "../lib/historyStorage";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
 import type { WorkflowStep, WorkflowStepIcon } from "../domain/workflow";
@@ -101,6 +101,7 @@ export function ResultScreen({ navigation, route }: Props) {
   const stepCompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasNavigatedRef = useRef(false);
   const [lastSavedSignature, setLastSavedSignature] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState(() => "sess_" + Date.now());
 
   useEffect(() => {
     if (!workflowCompleted) return;
@@ -124,6 +125,7 @@ export function ResultScreen({ navigation, route }: Props) {
           else navigation.replace("Input");
           return;
         }
+        setSessionId(record.sessionId ?? "sess_" + Date.now());
         setRestoredResultData(record.resultData);
         setOrderedSteps(resultDataToWorkflowSteps(record.resultData));
         setStepDoneMap(
@@ -282,8 +284,16 @@ export function ResultScreen({ navigation, route }: Props) {
           status: (s.kind === "step" && stepDoneMap[s.id] ? "done" : "todo") as "done" | "todo",
         })),
       };
-      appendHistory({ id: String(Date.now()), completedDate, time, title, steps, resultData }).catch(() => {});
-      if (__DEV__) console.log("saved history");
+      upsertHistoryRecord({
+        id: "",
+        sessionId,
+        completedDate,
+        time,
+        title,
+        steps,
+        resultData,
+      }).catch(() => {});
+      if (__DEV__) console.log("완료 저장 sessionId:", sessionId);
     }
     setRunningStepId(null);
     setInProgress(false);
@@ -324,26 +334,27 @@ export function ResultScreen({ navigation, route }: Props) {
     const title = currentResultData.title;
     const middleSteps = orderedSteps.filter((s) => s.kind === "step");
     const steps = Math.max(0, middleSteps.length);
-    const id = String(Date.now());
     const sig = currentSignature;
-    appendHistory({
-      id,
+    upsertHistoryRecord({
+      id: "",
+      sessionId,
       completedDate,
       time,
       title,
       steps,
       resultData: currentResultData,
     })
-      .then(() => {
-        console.log("수동 저장 완료", id);
+      .then((list) => {
+        if (__DEV__) console.log("수동 저장 완료 sessionId:", sessionId);
         setToast("캘린더에 저장했어요");
         if (sig) setLastSavedSignature(sig);
-        navigation.replace("History", { highlightId: id });
+        const rec = list.find((r) => r.sessionId === sessionId);
+        if (rec) navigation.replace("History", { highlightId: rec.id });
       })
       .catch(() => {
         setToast("저장에 실패했어요");
       });
-  }, [data, currentResultData, currentSignature, orderedSteps, isSavedState, navigation]);
+  }, [data, currentResultData, currentSignature, orderedSteps, isSavedState, navigation, sessionId]);
 
   if (recordId && !restoredResultData) {
     return (

@@ -30,12 +30,16 @@ async function getStorage(): Promise<StorageAdapter> {
 
 export type HistoryRecord = {
   id: string;
+  /** 한 워크플로우 세션당 하나. upsert 시 이 값으로 기존 기록 찾음 */
+  sessionId?: string;
   completedDate: string; // YYYY-MM-DD
   time: string; // HH:mm
   title: string;
   steps: number;
   /** 복원용: 있으면 히스토리에서 탭 시 ResultScreen을 이 데이터로 렌더링 */
   resultData?: ResultData;
+  createdAt?: number;
+  updatedAt?: number;
 };
 
 export async function loadHistory(): Promise<HistoryRecord[]> {
@@ -75,6 +79,52 @@ export async function appendHistory(record: HistoryRecord): Promise<HistoryRecor
     records.push(record);
     const trimmed = records.length > MAX_RECORDS ? records.slice(-MAX_RECORDS) : records;
     await saveHistory(trimmed);
+    return trimmed;
+  } catch {
+    return [];
+  }
+}
+
+export type UpsertHistoryRecordInput = Omit<HistoryRecord, "createdAt" | "updatedAt"> & {
+  sessionId: string;
+};
+
+export async function upsertHistoryRecord(
+  record: UpsertHistoryRecordInput
+): Promise<HistoryRecord[]> {
+  try {
+    const records = await loadHistory();
+    const idx = records.findIndex((r) => r.sessionId === record.sessionId);
+    const now = Date.now();
+    if (idx >= 0) {
+      const existing = records[idx];
+      records[idx] = {
+        ...record,
+        id: existing.id,
+        createdAt: existing.createdAt ?? now,
+        updatedAt: now,
+      };
+    } else {
+      records.push({
+        ...record,
+        id: record.id || "rec_" + now,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+    const trimmed = records.length > MAX_RECORDS ? records.slice(-MAX_RECORDS) : records;
+    await saveHistory(trimmed);
+    if (__DEV__) {
+      const sameSession = trimmed.filter((r) => r.sessionId === record.sessionId);
+      console.log(
+        "[upsertHistoryRecord] sessionId:",
+        record.sessionId,
+        "동일 sessionId 기록 수:",
+        sameSession.length,
+        "히스토리 길이:",
+        trimmed.length
+      );
+    }
     return trimmed;
   } catch {
     return [];
