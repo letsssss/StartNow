@@ -5,6 +5,7 @@ import {
   type ActionFromAI,
   type ParseActionsResult,
 } from "@/infra/parseActionsFromText";
+import { corsHeaders } from "@/infra/cors";
 
 /**
  * route.ts 변경 요약:
@@ -39,12 +40,18 @@ function buildWorkflowReason(result: ParseActionsResult): string {
   return parts.join(" ");
 }
 
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204 });
+export async function OPTIONS(request: Request) {
+  const origin = request.headers.get("origin");
+  const res = new NextResponse(null, { status: 204 });
+  Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
+  return res;
 }
 
-export async function GET() {
-  return NextResponse.json({ ok: true });
+export async function GET(request: Request) {
+  const origin = request.headers.get("origin");
+  const res = NextResponse.json({ ok: true });
+  Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
+  return res;
 }
 
 export async function POST(request: Request) {
@@ -80,12 +87,18 @@ export async function POST(request: Request) {
       workflowReason: buildWorkflowReason(result),
     };
 
-    return NextResponse.json(data);
+    const res = NextResponse.json(data);
+    const origin = request.headers.get("origin");
+    Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
+    return res;
   } catch (e) {
     console.error("[api/structure]", e);
-    return NextResponse.json(
+    const res = NextResponse.json(
       { error: { code: "SERVER_ERROR", message: String(e) } },
       { status: 500 }
     );
+    const origin = request.headers.get("origin");
+    Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
+    return res;
   }
 }
