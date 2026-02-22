@@ -196,8 +196,13 @@ export async function parseActionsFromText(rawInput: string): Promise<ParseActio
       return fallbackResult(rawInput);
     }
 
-    const intent = ["prioritize", "list", "decide", "unknown"].includes((parsed as { intent?: string }).intent)
-      ? (parsed as { intent: ParseActionsResult["intent"] }).intent
+    const rawIntent = (parsed as { intent?: unknown }).intent;
+    const intentCandidate = typeof rawIntent === "string" ? rawIntent : undefined;
+
+    const intent = (["prioritize", "list", "decide", "unknown"] as const).includes(
+      intentCandidate as any
+    )
+      ? (intentCandidate as ParseActionsResult["intent"])
       : "unknown";
     const notes = typeof (parsed as { notes?: string }).notes === "string" ? (parsed as { notes: string }).notes : "";
     const truncated = Boolean((parsed as { truncated?: boolean }).truncated);
