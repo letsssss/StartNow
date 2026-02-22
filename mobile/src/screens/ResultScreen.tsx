@@ -133,6 +133,18 @@ export function ResultScreen({ navigation, route }: Props) {
           )
         );
         setLastSavedSignature(resultDataSignature(record.resultData));
+        const steps = record.resultData.steps;
+        const middleStepsFromResult = steps.filter((s) => s.id !== "start" && s.id !== "end");
+        if (middleStepsFromResult.length === 0) {
+          if (__DEV__) console.warn("[ResultScreen] 복원: steps가 비어있거나 middle이 없어 시작 버튼 위치를 알 수 없음");
+        } else {
+          const nextIdx = middleStepsFromResult.findIndex((s) => s.status !== "done");
+          if (nextIdx === -1) {
+            // 전부 done → 시작 버튼 없음
+          } else {
+            setActiveStepId(middleStepsFromResult[nextIdx].id);
+          }
+        }
       })
       .catch(() => {
         setToast("기록을 찾을 수 없어요");
