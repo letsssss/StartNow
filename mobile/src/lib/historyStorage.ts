@@ -76,3 +76,14 @@ export async function appendHistory(record: HistoryRecord): Promise<HistoryRecor
     return [];
   }
 }
+
+export async function deleteHistoryRecord(id: string): Promise<HistoryRecord[]> {
+  try {
+    const records = await loadHistory();
+    const next = records.filter((r) => r.id !== id);
+    await saveHistory(next);
+    return next;
+  } catch {
+    return [];
+  }
+}

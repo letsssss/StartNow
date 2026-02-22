@@ -222,35 +222,6 @@ export function ResultScreen({ navigation }: Props) {
           />
         </View>
 
-        <Text style={styles.sectionLabel}>순서를 이렇게 잡았어요</Text>
-        <Text style={styles.workflowReason}>{data.workflowReason}</Text>
-
-        <Text style={styles.sectionLabel}>목표</Text>
-        {data.goals.map((g, i) => (
-          <Text key={i} style={styles.bullet}>• {g}</Text>
-        ))}
-        {data.branches.length > 0 && (
-          <>
-            <Text style={styles.sectionLabel}>가지 생각</Text>
-            {data.branches.map((b, i) => (
-              <Text key={i} style={styles.bullet}>• {b}</Text>
-            ))}
-          </>
-        )}
-        {data.blockers.length > 0 && (
-          <>
-            <Text style={styles.sectionLabel}>방해 요인</Text>
-            {data.blockers.map((b, i) => (
-              <Text key={i} style={styles.bullet}>• {b}</Text>
-            ))}
-          </>
-        )}
-        <Text style={styles.sectionLabel}>행동 3개</Text>
-        {data.actions.map((a, i) => (
-          <Text key={i} style={styles.bullet}>
-            • {a.label} ({a.minutes}분)
-          </Text>
-        ))}
         <View style={styles.spacer} />
       </ScrollView>
 
@@ -420,16 +391,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     overflow: "hidden",
   },
-  workflowReason: { fontSize: 14, lineHeight: 22, color: "#333", marginBottom: 16 },
-  title: { fontSize: 18, fontWeight: "700", marginBottom: 16 },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#666",
-    marginTop: 14,
-    marginBottom: 4,
-  },
-  bullet: { fontSize: 15, marginLeft: 4, marginBottom: 2 },
   spacer: { height: 24 },
   toast: {
     position: "absolute",

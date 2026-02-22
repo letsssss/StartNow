@@ -1,15 +1,16 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
-import { loadHistory, type HistoryRecord } from "../lib/historyStorage";
+import { loadHistory, deleteHistoryRecord, type HistoryRecord } from "../lib/historyStorage";
 
 type Props = NativeStackScreenProps<RootStackParamList, "History">;
 
@@ -50,6 +51,8 @@ function sameYMD(a: Date, b: Date) {
 }
 
 const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+const DAY_SIZE = 44;
+const DAY_BORDER_WIDTH = 2;
 
 export function HistoryScreen({ navigation }: Props) {
   const today = useMemo(() => {
@@ -63,12 +66,54 @@ export function HistoryScreen({ navigation }: Props) {
     () => new Date(today.getFullYear(), today.getMonth(), 1)
   );
   const [selectedDate, setSelectedDate] = useState<string>(() => toYMD(today));
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       loadHistory().then(setSessions);
     }, [])
   );
+
+  useEffect(() => {
+    if (!toast) return;
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null);
+      toastTimeoutRef.current = null;
+    }, 2000);
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+        toastTimeoutRef.current = null;
+      }
+    };
+  }, [toast]);
+
+  const handleLongPressRecord = useCallback((record: HistoryRecord) => {
+    Alert.alert("기록", "", [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: () => {
+          Alert.alert("기록 삭제", "이 기록을 삭제할까요?", [
+            { text: "취소", style: "cancel" },
+            {
+              text: "삭제",
+              style: "destructive",
+              onPress: () => {
+                deleteHistoryRecord(record.id).then((next) => {
+                  setSessions(next);
+                  setToast("삭제됨");
+                });
+              },
+            },
+          ]);
+        },
+      },
+    ]);
+  }, []);
 
   const completedSet = useMemo(
     () => new Set(sessions.map((s) => s.completedDate)),
@@ -257,13 +302,18 @@ export function HistoryScreen({ navigation }: Props) {
           ) : (
             <View style={styles.cardList}>
               {sessionsForSelected.map((s) => (
-                <View key={s.id} style={styles.card}>
+                <TouchableOpacity
+                  key={s.id}
+                  style={styles.card}
+                  onLongPress={() => handleLongPressRecord(s)}
+                  activeOpacity={1}
+                >
                   <Text style={styles.cardTitle}>{s.title}</Text>
                   <View style={styles.cardMeta}>
                     <Text style={styles.cardMetaText}>🕒 {s.time}</Text>
                     <Text style={styles.cardMetaText}>{s.steps} steps</Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           )}
@@ -279,6 +329,11 @@ export function HistoryScreen({ navigation }: Props) {
           <Text style={styles.backBtnText}>입력 화면으로</Text>
         </TouchableOpacity>
       </ScrollView>
+      {toast ? (
+        <View style={styles.toast}>
+          <Text style={styles.toastText}>{toast}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -382,21 +437,24 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   dayCell: {
-    width: "14.28%",
-    aspectRatio: 1,
-    maxHeight: 44,
-    justifyContent: "center",
+    width: DAY_SIZE,
+    height: DAY_SIZE,
+    borderRadius: DAY_SIZE / 2,
     alignItems: "center",
-    borderRadius: 22,
+    justifyContent: "center",
+    borderWidth: DAY_BORDER_WIDTH,
+    borderColor: "transparent",
+    backgroundColor: "transparent",
   },
   dayCellDim: {
     opacity: 0.4,
   },
   dayCellSelected: {
     backgroundColor: "rgba(52, 211, 153, 0.9)",
+    borderColor: "transparent",
   },
   dayCellToday: {
-    borderWidth: 1,
+    borderWidth: DAY_BORDER_WIDTH,
     borderColor: "rgba(52, 211, 153, 0.6)",
   },
   dayNum: {
@@ -474,4 +532,16 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "500",
   },
+  toast: {
+    position: "absolute",
+    bottom: 40,
+    left: 20,
+    right: 20,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  toastText: { color: "#fff", fontSize: 14 },
 });
