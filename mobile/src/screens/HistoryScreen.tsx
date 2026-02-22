@@ -13,6 +13,7 @@ import type { RootStackParamList } from "../../App";
 import { loadHistory, deleteHistoryRecord, type HistoryRecord } from "../lib/historyStorage";
 
 type Props = NativeStackScreenProps<RootStackParamList, "History">;
+type HistoryParams = RootStackParamList["History"];
 
 function pad2(n: number) {
   return n.toString().padStart(2, "0");
@@ -54,7 +55,7 @@ const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const DAY_SIZE = 44;
 const DAY_BORDER_WIDTH = 2;
 
-export function HistoryScreen({ navigation }: Props) {
+export function HistoryScreen({ navigation, route }: Props) {
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -71,8 +72,15 @@ export function HistoryScreen({ navigation }: Props) {
 
   useFocusEffect(
     useCallback(() => {
-      loadHistory().then(setSessions);
-    }, [])
+      loadHistory().then((records) => {
+        setSessions(records);
+        const highlightId = (route.params as HistoryParams)?.highlightId;
+        if (highlightId) {
+          const rec = records.find((r) => r.id === highlightId);
+          if (rec) setSelectedDate(rec.completedDate);
+        }
+      });
+    }, [route.params])
   );
 
   useEffect(() => {
@@ -305,6 +313,7 @@ export function HistoryScreen({ navigation }: Props) {
                 <TouchableOpacity
                   key={s.id}
                   style={styles.card}
+                  onPress={() => navigation.navigate("Result", { recordId: s.id })}
                   onLongPress={() => handleLongPressRecord(s)}
                   activeOpacity={1}
                 >

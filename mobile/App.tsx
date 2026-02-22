@@ -9,8 +9,8 @@ import { HistoryScreen } from "./src/screens/HistoryScreen";
 
 export type RootStackParamList = {
   Input: undefined;
-  Result: undefined;
-  History: undefined;
+  Result: { recordId?: string };
+  History: { highlightId?: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

@@ -1,3 +1,4 @@
+// 결과 화면 — live(새 결과)/history(recordId 복원) 모드. 저장 버튼은 currentSignature vs lastSavedSignature로 판단, append만 허용.
 import React, { useEffect, useState, useMemo, useLayoutEffect, useCallback, useRef } from "react";
 import {
   View,
@@ -19,27 +20,87 @@ import {
 } from "../state/session";
 import { normalizeToWorkflowSteps, mergeWithStartEnd } from "../domain/workflow";
 import { WorkflowTimeline } from "../components/WorkflowTimeline";
-import { appendHistory } from "../lib/historyStorage";
+import { appendHistory, loadHistory, type ResultData } from "../lib/historyStorage";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
+import type { WorkflowStep, WorkflowStepIcon } from "../domain/workflow";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Result">;
 
-export function ResultScreen({ navigation }: Props) {
-  const data = getLastStructuredResult();
+const RESTORE_ICONS: WorkflowStepIcon[] = ["person", "mail", "gear"];
+function iconForRestoreStepIndex(i: number): WorkflowStepIcon {
+  return RESTORE_ICONS[i % RESTORE_ICONS.length];
+}
+function resultDataToWorkflowSteps(rd: ResultData): WorkflowStep[] {
+  return rd.steps.map((s, i) => {
+    const kind: "start" | "step" | "end" =
+      s.id === "start" ? "start" : s.id === "end" ? "end" : "step";
+    const icon: WorkflowStepIcon =
+      kind === "start" ? "spark" : kind === "end" ? "check" : iconForRestoreStepIndex(i);
+    return {
+      id: s.id,
+      order: s.order,
+      title: s.label,
+      icon,
+      kind,
+      subtitle: s.sub,
+    };
+  });
+}
+
+function buildResultData(
+  title: string,
+  orderedSteps: WorkflowStep[],
+  stepDoneMap: Record<string, boolean>
+): ResultData {
+  return {
+    title,
+    steps: orderedSteps.map((s) => ({
+      id: s.id,
+      order: s.order,
+      label: s.title,
+      sub: s.subtitle,
+      status: (s.kind === "step" && stepDoneMap[s.id] ? "done" : "todo") as "done" | "todo",
+    })),
+  };
+}
+
+function resultDataSignature(rd: ResultData): string {
+  return JSON.stringify(rd);
+}
+
+export function ResultScreen({ navigation, route }: Props) {
+  const recordId = route.params?.recordId;
+  const sessionData = getLastStructuredResult();
+  const [restoredResultData, setRestoredResultData] = useState<ResultData | null>(null);
+  const data = useMemo(() => {
+    if (restoredResultData) {
+      return {
+        title: restoredResultData.title,
+        pickNow: { label: restoredResultData.steps[1]?.label ?? restoredResultData.title },
+        goals: [] as string[],
+        branches: [] as string[],
+        blockers: [] as string[],
+        actions: [] as { label: string; minutes: number }[],
+        workflowReason: "",
+      };
+    }
+    return sessionData;
+  }, [restoredResultData, sessionData]);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [inProgress, setInProgress] = useState(false);
   const [activeStepId, setActiveStepId] = useState<string | null>(null);
   const [runningStepId, setRunningStepId] = useState<string | null>(null);
   const [stepDoneMap, setStepDoneMap] = useState<Record<string, boolean>>({});
-  const [orderedSteps, setOrderedSteps] = useState(() =>
-    data ? normalizeToWorkflowSteps(data) : []
+  const [orderedSteps, setOrderedSteps] = useState<WorkflowStep[]>(() =>
+    sessionData ? normalizeToWorkflowSteps(sessionData) : []
   );
   const [workflowCompleted, setWorkflowCompleted] = useState(false);
   const [lastCompletedStepId, setLastCompletedStepId] = useState<string | null>(null);
   const stepCompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasNavigatedRef = useRef(false);
+  const [lastSavedSignature, setLastSavedSignature] = useState<string | null>(null);
 
   useEffect(() => {
     if (!workflowCompleted) return;
@@ -50,8 +111,35 @@ export function ResultScreen({ navigation }: Props) {
   }, [workflowCompleted, navigation]);
 
   useEffect(() => {
-    if (data) setOrderedSteps(normalizeToWorkflowSteps(data));
-  }, [data]);
+    if (!restoredResultData && data) setOrderedSteps(normalizeToWorkflowSteps(data));
+  }, [data, restoredResultData]);
+  useEffect(() => {
+    if (!recordId) return;
+    loadHistory()
+      .then((records) => {
+        const record = records.find((r) => r.id === recordId);
+        if (!record?.resultData) {
+          setToast("기록을 찾을 수 없어요");
+          if (navigation.canGoBack()) navigation.goBack();
+          else navigation.replace("Input");
+          return;
+        }
+        setRestoredResultData(record.resultData);
+        setOrderedSteps(resultDataToWorkflowSteps(record.resultData));
+        setStepDoneMap(
+          record.resultData.steps.reduce(
+            (acc, s) => ({ ...acc, [s.id]: s.status === "done" }),
+            {} as Record<string, boolean>
+          )
+        );
+        setLastSavedSignature(resultDataSignature(record.resultData));
+      })
+      .catch(() => {
+        setToast("기록을 찾을 수 없어요");
+        if (navigation.canGoBack()) navigation.goBack();
+        else navigation.replace("Input");
+      });
+  }, [recordId, navigation]);
 
   useEffect(() => {
     return () => {
@@ -172,7 +260,17 @@ export function ResultScreen({ navigation }: Props) {
       const time = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
       const title = data?.pickNow?.label?.trim() || "Workflow";
       const steps = Math.max(0, middleSteps.length);
-      appendHistory({ id: String(Date.now()), completedDate, time, title, steps }).catch(() => {});
+      const resultData: ResultData = {
+        title,
+        steps: orderedSteps.map((s) => ({
+          id: s.id,
+          order: s.order,
+          label: s.title,
+          sub: s.subtitle,
+          status: (s.kind === "step" && stepDoneMap[s.id] ? "done" : "todo") as "done" | "todo",
+        })),
+      };
+      appendHistory({ id: String(Date.now()), completedDate, time, title, steps, resultData }).catch(() => {});
       if (__DEV__) console.log("saved history");
     }
     setRunningStepId(null);
@@ -187,6 +285,61 @@ export function ResultScreen({ navigation }: Props) {
     data?.pickNow?.label ??
     "";
 
+  const currentResultData = useMemo(
+    () =>
+      data
+        ? buildResultData(
+            data.title?.trim() || data.pickNow?.label?.trim() || "Workflow",
+            orderedSteps,
+            stepDoneMap
+          )
+        : null,
+    [data, orderedSteps, stepDoneMap]
+  );
+  const currentSignature = useMemo(
+    () => (currentResultData ? resultDataSignature(currentResultData) : null),
+    [currentResultData]
+  );
+  const isSavedState =
+    lastSavedSignature !== null && currentSignature !== null && currentSignature === lastSavedSignature;
+
+  const handleSave = useCallback(() => {
+    if (!data || !currentResultData || isSavedState) return;
+    const now = new Date();
+    const pad2 = (n: number) => String(n).padStart(2, "0");
+    const completedDate = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+    const time = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+    const title = currentResultData.title;
+    const middleSteps = orderedSteps.filter((s) => s.kind === "step");
+    const steps = Math.max(0, middleSteps.length);
+    const id = String(Date.now());
+    const sig = currentSignature;
+    appendHistory({
+      id,
+      completedDate,
+      time,
+      title,
+      steps,
+      resultData: currentResultData,
+    })
+      .then(() => {
+        console.log("수동 저장 완료", id);
+        setToast("캘린더에 저장했어요");
+        if (sig) setLastSavedSignature(sig);
+        navigation.replace("History", { highlightId: id });
+      })
+      .catch(() => {
+        setToast("저장에 실패했어요");
+      });
+  }, [data, currentResultData, currentSignature, orderedSteps, isSavedState, navigation]);
+
+  if (recordId && !restoredResultData) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.empty}>로딩 중...</Text>
+      </View>
+    );
+  }
   if (!data) {
     return (
       <View style={styles.container}>
@@ -223,6 +376,16 @@ export function ResultScreen({ navigation }: Props) {
         </View>
 
         <View style={styles.spacer} />
+        <TouchableOpacity
+          style={[styles.saveBtn, isSavedState && styles.saveBtnDisabled]}
+          onPress={handleSave}
+          disabled={isSavedState}
+          activeOpacity={isSavedState ? 1 : 0.7}
+        >
+          <Text style={styles.saveBtnText}>
+            {isSavedState ? "저장됨 ✓" : "저장하기"}
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {inProgress ? (
@@ -392,6 +555,23 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   spacer: { height: 24 },
+  saveBtn: {
+    alignSelf: "stretch",
+    backgroundColor: "#34d399",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  saveBtnDisabled: {
+    backgroundColor: "rgba(52, 211, 153, 0.5)",
+    opacity: 0.9,
+  },
+  saveBtnText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+  },
   toast: {
     position: "absolute",
     bottom: 40,
