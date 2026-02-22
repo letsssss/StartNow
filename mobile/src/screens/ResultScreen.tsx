@@ -424,8 +424,9 @@ export function ResultScreen({ navigation, route }: Props) {
         showsVerticalScrollIndicator={false}
         onScrollBeginDrag={inProgress ? handleDismissInProgress : undefined}
       >
-        <View style={styles.timelineWrap}>
-          <WorkflowTimeline
+        <View style={styles.workflowSectionWrapper}>
+          <View style={styles.timelineWrap}>
+            <WorkflowTimeline
             steps={stepsWithDone}
             onToggleDone={handleToggleStepDone}
             onStartPickNow={handleStartPickNow}
@@ -438,6 +439,7 @@ export function ResultScreen({ navigation, route }: Props) {
                 : activeStepTitle
             }
           />
+          </View>
         </View>
 
         <View style={styles.spacer} />
@@ -632,11 +634,17 @@ const styles = StyleSheet.create({
   },
   bottomActionBarButtons: { flexDirection: "row", gap: 12 },
   empty: { padding: 20, fontSize: 16, color: "#666" },
+  workflowSectionWrapper: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    borderRadius: 22,
+    overflow: "hidden",
+    marginBottom: 20,
+  },
   timelineWrap: {
     backgroundColor: "#1C1C1E",
     borderRadius: 16,
     paddingVertical: 12,
-    marginBottom: 20,
     overflow: "hidden",
   },
   spacer: { height: 24 },
