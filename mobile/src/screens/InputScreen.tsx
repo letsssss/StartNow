@@ -76,7 +76,7 @@ export function InputScreen({ navigation }: Props) {
           <TouchableOpacity
             style={styles.historyBtn}
             onPress={() => navigation.navigate("History")}
-            activeOpacity={0.8}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <Text style={styles.historyIcon}>↻</Text>
             <Text style={styles.historyBtnText}>History</Text>
@@ -178,14 +178,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: 9999,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.15)",
   },
   historyIcon: {
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#14B8A6",
   },
   historyBtnText: {
     fontSize: 14,

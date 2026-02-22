@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   StyleSheet,
-  Alert,
   Platform,
   Animated,
   Dimensions,
@@ -23,13 +22,6 @@ import { WorkflowTimeline } from "../components/WorkflowTimeline";
 import { appendHistory } from "../lib/historyStorage";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
-
-const ABORT_REASONS = [
-  { id: "산만", label: "산만" },
-  { id: "피곤", label: "피곤" },
-  { id: "일정변경", label: "일정변경" },
-  { id: "기타", label: "기타" },
-] as const;
 
 type Props = NativeStackScreenProps<RootStackParamList, "Result">;
 
@@ -53,7 +45,7 @@ export function ResultScreen({ navigation }: Props) {
     if (!workflowCompleted) return;
     if (hasNavigatedRef.current) return;
     hasNavigatedRef.current = true;
-    const t = setTimeout(() => navigation.navigate("History"), 1300);
+    const t = setTimeout(() => navigation.replace("History"), 1300);
     return () => clearTimeout(t);
   }, [workflowCompleted, navigation]);
 
@@ -190,26 +182,6 @@ export function ResultScreen({ navigation }: Props) {
     setToast("완료했어요");
   };
 
-  const handleAbort = () => {
-    Alert.alert(
-      "중단 이유",
-      "이유를 선택하세요",
-      [
-        ...ABORT_REASONS.map((r) => ({
-          text: r.label,
-          onPress: () => {
-            setLastRecordMessage(`중단 (${r.label})`);
-            setToast(`중단 (${r.label})`);
-            setRunningStepId(null);
-            setActiveStepId(null);
-            setInProgress(false);
-          },
-        })),
-        { text: "취소", style: "cancel" },
-      ]
-    );
-  };
-
   const activeStepTitle =
     (activeStepId ? orderedSteps.find((s) => s.id === activeStepId)?.title : null) ??
     data?.pickNow?.label ??
@@ -294,9 +266,6 @@ export function ResultScreen({ navigation }: Props) {
             <View style={styles.bottomActionBarButtons}>
               <TouchableOpacity style={[styles.endBtn, styles.completeBtn]} onPress={handleComplete}>
                 <Text style={styles.endBtnText}>완료</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.endBtn, styles.abortBtn]} onPress={handleAbort}>
-                <Text style={styles.endBtnTextAbort}>중단</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -413,9 +382,7 @@ const styles = StyleSheet.create({
   // [온보딩 재사용] 제거한 단계 안내 UI용 스타일: steps, step, stepDone, stepArrow, orderGuide
   endBtn: { flex: 1, paddingVertical: 14, borderRadius: 10, alignItems: "center" },
   completeBtn: { backgroundColor: "#34C759" },
-  abortBtn: { backgroundColor: "#E5E5EA" },
   endBtnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  endBtnTextAbort: { color: "#000", fontSize: 16, fontWeight: "600" },
   scroll: { flex: 1 },
   content: { padding: 20, paddingBottom: 24 },
   contentWithBottomBar: { paddingBottom: 100 },

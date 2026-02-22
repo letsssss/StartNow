@@ -127,7 +127,14 @@ export function HistoryScreen({ navigation }: Props) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+          <TouchableOpacity
+            onPress={() => {
+              if (navigation.canGoBack()) navigation.goBack();
+              else navigation.replace("Input");
+            }}
+            hitSlop={12}
+            activeOpacity={0.7}
+          >
             <Text style={styles.headerLink}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>History</Text>
@@ -264,7 +271,10 @@ export function HistoryScreen({ navigation }: Props) {
 
         <TouchableOpacity
           style={styles.backBtn}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            if (navigation.canGoBack()) navigation.goBack();
+            else navigation.replace("Input");
+          }}
         >
           <Text style={styles.backBtnText}>입력 화면으로</Text>
         </TouchableOpacity>
@@ -292,7 +302,7 @@ const styles = StyleSheet.create({
   },
   headerLink: {
     fontSize: 14,
-    color: "rgba(255,255,255,0.8)",
+    color: "#34d399",
   },
   headerTitle: {
     fontSize: 18,
