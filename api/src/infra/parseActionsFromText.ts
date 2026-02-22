@@ -89,7 +89,7 @@ const USER_PROMPT_SUFFIX = `>>>
 
 끝.`;
 
-const MAX_ACTIONS = 12;
+const MAX_ACTIONS = 50;
 const MAX_NOTES_LENGTH = 200;
 const FORBIDDEN_PATTERNS = /좋은\s*습관|동기|마음가짐|해보자|화이팅|중요합니다/;
 
@@ -233,7 +233,7 @@ export async function parseActionsFromText(rawInput: string): Promise<ParseActio
     const truncatedResult = actions.length > MAX_ACTIONS;
     if (truncatedResult) {
       actions = actions.slice(0, MAX_ACTIONS);
-      console.log("[parseActionsFromText] actions 12개 초과, 상위 12개만 사용. truncated=true");
+      console.log("[parseActionsFromText] actions 50개 초과, 상위 50개만 사용. truncated=true");
     }
 
     let finalNotes = notes.trim();

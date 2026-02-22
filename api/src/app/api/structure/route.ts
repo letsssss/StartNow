@@ -35,7 +35,7 @@ function orderActionsByRule(actions: ActionFromAI[]): ActionFromAI[] {
 function buildWorkflowReason(result: ParseActionsResult): string {
   const parts: string[] = [];
   if (result.notes) parts.push(result.notes);
-  if (result.truncated) parts.push("12개 초과분은 생략했습니다.");
+  if (result.truncated) parts.push("50개 초과분은 생략했습니다.");
   if (parts.length === 0) return "입력 내용을 바탕으로 행동을 분해했습니다.";
   return parts.join(" ");
 }
