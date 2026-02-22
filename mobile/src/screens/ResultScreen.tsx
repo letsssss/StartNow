@@ -47,6 +47,15 @@ export function ResultScreen({ navigation }: Props) {
   const [workflowCompleted, setWorkflowCompleted] = useState(false);
   const [lastCompletedStepId, setLastCompletedStepId] = useState<string | null>(null);
   const stepCompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasNavigatedRef = useRef(false);
+
+  useEffect(() => {
+    if (!workflowCompleted) return;
+    if (hasNavigatedRef.current) return;
+    hasNavigatedRef.current = true;
+    const t = setTimeout(() => navigation.navigate("History"), 1300);
+    return () => clearTimeout(t);
+  }, [workflowCompleted, navigation]);
 
   useEffect(() => {
     if (data) setOrderedSteps(normalizeToWorkflowSteps(data));
