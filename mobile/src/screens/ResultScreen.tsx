@@ -125,6 +125,10 @@ export function ResultScreen({ navigation, route }: Props) {
           else navigation.replace("Input");
           return;
         }
+        if (__DEV__) {
+          const lastStep = record.resultData.steps[record.resultData.steps.length - 1];
+          console.log("캘린더 복원 recordId:", recordId, "마지막 step status:", lastStep?.status);
+        }
         setSessionId(record.sessionId ?? "sess_" + Date.now());
         setRestoredResultData(record.resultData);
         setOrderedSteps(resultDataToWorkflowSteps(record.resultData));
@@ -274,6 +278,10 @@ export function ResultScreen({ navigation, route }: Props) {
       const time = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
       const title = data?.pickNow?.label?.trim() || "Workflow";
       const steps = Math.max(0, middleSteps.length);
+      const nextStepDoneMap =
+        runningStep != null
+          ? { ...stepDoneMap, [runningStep.id]: true }
+          : stepDoneMap;
       const resultData: ResultData = {
         title,
         steps: orderedSteps.map((s) => ({
@@ -281,9 +289,13 @@ export function ResultScreen({ navigation, route }: Props) {
           order: s.order,
           label: s.title,
           sub: s.subtitle,
-          status: (s.kind === "step" && stepDoneMap[s.id] ? "done" : "todo") as "done" | "todo",
+          status: (s.kind === "step" && nextStepDoneMap[s.id] ? "done" : "todo") as "done" | "todo",
         })),
       };
+      if (__DEV__) {
+        const lastStep = resultData.steps[resultData.steps.length - 1];
+        console.log("완료 저장 sessionId:", sessionId, "마지막 step status:", lastStep?.status);
+      }
       upsertHistoryRecord({
         id: "",
         sessionId,
@@ -293,7 +305,6 @@ export function ResultScreen({ navigation, route }: Props) {
         steps,
         resultData,
       }).catch(() => {});
-      if (__DEV__) console.log("완료 저장 sessionId:", sessionId);
     }
     setRunningStepId(null);
     setInProgress(false);
