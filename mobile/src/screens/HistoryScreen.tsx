@@ -55,6 +55,14 @@ const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const DAY_SIZE = 44;
 const DAY_BORDER_WIDTH = 2;
 
+function getHistoryCardTitle(record: HistoryRecord): string {
+  const steps = record.resultData?.steps ?? [];
+  const middleSteps = steps.filter((s) => s.id !== "start" && s.id !== "end");
+  if (middleSteps.length === 0) return record.title || "제목 없음";
+  if (middleSteps.length === 1) return middleSteps[0].label;
+  return `${middleSteps[0].label} 외 ${middleSteps.length - 1} 단계`;
+}
+
 export function HistoryScreen({ navigation, route }: Props) {
   const today = useMemo(() => {
     const d = new Date();
@@ -317,7 +325,7 @@ export function HistoryScreen({ navigation, route }: Props) {
                   onLongPress={() => handleLongPressRecord(s)}
                   activeOpacity={1}
                 >
-                  <Text style={styles.cardTitle}>{s.title}</Text>
+                  <Text style={styles.cardTitle}>{getHistoryCardTitle(s)}</Text>
                   <View style={styles.cardMeta}>
                     <Text style={styles.cardMetaText}>🕒 {s.time}</Text>
                     <Text style={styles.cardMetaText}>{s.steps} steps</Text>
@@ -330,10 +338,7 @@ export function HistoryScreen({ navigation, route }: Props) {
 
         <TouchableOpacity
           style={styles.backBtn}
-          onPress={() => {
-            if (navigation.canGoBack()) navigation.goBack();
-            else navigation.replace("Input");
-          }}
+          onPress={() => navigation.replace("Input")}
         >
           <Text style={styles.backBtnText}>입력 화면으로</Text>
         </TouchableOpacity>
