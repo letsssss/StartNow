@@ -11,6 +11,8 @@ import {
   Animated,
   Dimensions,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 import {
@@ -215,15 +217,10 @@ export function ResultScreen({ navigation, route }: Props) {
     else navigation.replace("Input");
   }, [navigation, inProgress, handleDismissInProgress]);
 
+  const insets = useSafeAreaInsets();
   useLayoutEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <TouchableOpacity onPress={handleBack} style={styles.headerBackTouch}>
-          <Text style={styles.headerBackText}>뒤로</Text>
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, handleBack]);
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
 
   useEffect(() => {
     const msg = getLastRecordMessage();
@@ -370,6 +367,15 @@ export function ResultScreen({ navigation, route }: Props) {
   if (recordId && !restoredResultData) {
     return (
       <View style={styles.container}>
+        <View style={[styles.headerOuter, { paddingTop: insets.top }]}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={handleBack} style={styles.headerBackTouch} hitSlop={12} activeOpacity={0.7}>
+              <Ionicons name="chevron-back" size={28} color="#34d399" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>결과</Text>
+            <View style={styles.headerSpacer} />
+          </View>
+        </View>
         <Text style={styles.empty}>로딩 중...</Text>
       </View>
     );
@@ -377,6 +383,15 @@ export function ResultScreen({ navigation, route }: Props) {
   if (!data) {
     return (
       <View style={styles.container}>
+        <View style={[styles.headerOuter, { paddingTop: insets.top }]}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={handleBack} style={styles.headerBackTouch} hitSlop={12} activeOpacity={0.7}>
+              <Ionicons name="chevron-back" size={28} color="#34d399" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>결과</Text>
+            <View style={styles.headerSpacer} />
+          </View>
+        </View>
         <Text style={styles.empty}>결과가 없습니다. 입력에서 정리해 주세요.</Text>
       </View>
     );
@@ -387,6 +402,22 @@ export function ResultScreen({ navigation, route }: Props) {
   // 2) 스크롤 상단: "지금 할 순서: 1) 확인 → 2) 지금 할 1개 선택 → 3) 시작"
   return (
     <View style={styles.container}>
+      <View style={[styles.headerOuter, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={handleBack}
+            style={styles.headerBackTouch}
+            hitSlop={12}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={28} color="#34d399" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            결과
+          </Text>
+          <View style={styles.headerSpacer} />
+        </View>
+      </View>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.content, inProgress && styles.contentWithBottomBar]}
@@ -540,13 +571,33 @@ function WorkflowCompleteEffect({ onDone }: { onDone: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  headerBackTouch: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginLeft: Platform.OS === "android" ? 8 : 0,
+  container: { flex: 1, backgroundColor: "#1C1C1E" },
+  headerOuter: {
+    backgroundColor: "#1C1C1E",
+    paddingBottom: 0,
   },
-  headerBackText: { fontSize: 16, color: "#007AFF" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    height: 52,
+    paddingHorizontal: 8,
+  },
+  headerBackTouch: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: Platform.OS === "android" ? 4 : 0,
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff",
+    textAlign: "center",
+  },
+  headerSpacer: { width: 44 },
   // [온보딩 재사용] 제거한 단계 안내 UI용 스타일: steps, step, stepDone, stepArrow, orderGuide
   endBtn: { flex: 1, paddingVertical: 14, borderRadius: 10, alignItems: "center" },
   completeBtn: { backgroundColor: "#34C759" },
