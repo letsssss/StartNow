@@ -63,6 +63,16 @@ function getHistoryCardTitle(record: HistoryRecord): string {
   return `${middleSteps[0].label} 외 ${middleSteps.length - 1} 단계`;
 }
 
+/** record.resultData.steps 기준 middle 단계 완료 비율. total === 0 이면 null */
+function getRecordProgress(record: HistoryRecord): number | null {
+  const steps = record.resultData?.steps ?? [];
+  const middleSteps = steps.filter((s) => s.id !== "start" && s.id !== "end");
+  const total = middleSteps.length;
+  if (total === 0) return null;
+  const done = middleSteps.filter((s) => s.status === "done").length;
+  return done / total;
+}
+
 export function HistoryScreen({ navigation, route }: Props) {
   const today = useMemo(() => {
     const d = new Date();
@@ -317,21 +327,38 @@ export function HistoryScreen({ navigation, route }: Props) {
             </View>
           ) : (
             <View style={styles.cardList}>
-              {sessionsForSelected.map((s) => (
-                <TouchableOpacity
-                  key={s.id}
-                  style={styles.card}
-                  onPress={() => navigation.navigate("Result", { recordId: s.id })}
-                  onLongPress={() => handleLongPressRecord(s)}
-                  activeOpacity={1}
-                >
-                  <Text style={styles.cardTitle}>{getHistoryCardTitle(s)}</Text>
-                  <View style={styles.cardMeta}>
-                    <Text style={styles.cardMetaText}>🕒 {s.time}</Text>
-                    <Text style={styles.cardMetaText}>{s.steps} steps</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+              {sessionsForSelected.map((s) => {
+                const progress = getRecordProgress(s);
+                return (
+                  <TouchableOpacity
+                    key={s.id}
+                    style={styles.card}
+                    onPress={() => navigation.navigate("Result", { recordId: s.id })}
+                    onLongPress={() => handleLongPressRecord(s)}
+                    activeOpacity={1}
+                  >
+                    <View style={styles.cardContent}>
+                      <Text style={styles.cardTitle}>{getHistoryCardTitle(s)}</Text>
+                      <View style={styles.cardMeta}>
+                        <Text style={styles.cardMetaText}>🕒 {s.time}</Text>
+                        <Text style={styles.cardMetaText}>{s.steps} steps</Text>
+                      </View>
+                    </View>
+                    {progress !== null ? (
+                      <View style={styles.cardProgressWrap}>
+                        <View style={styles.progressTrack}>
+                          <View
+                            style={[
+                              styles.progressFill,
+                              { width: `${Math.round(progress * 100)}%` },
+                            ]}
+                          />
+                        </View>
+                      </View>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           )}
         </View>
@@ -512,11 +539,33 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
     backgroundColor: "rgba(255,255,255,0.05)",
     padding: 16,
+  },
+  cardContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+  cardProgressWrap: {
+    marginLeft: 12,
+    width: 56,
+    justifyContent: "center",
+  },
+  progressTrack: {
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 4,
+    backgroundColor: "#34d399",
   },
   cardTitle: {
     fontSize: 14,
