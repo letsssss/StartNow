@@ -1,0 +1,16 @@
+{
+  "build": {
+    "production": {
+      "ios": {
+        "distribution": "store"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascAppId": "6759628291"
+      }
+    }
+  }
+}
