@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { structureText } from "../infra/apiClient";
 import { setLastStructuredResult, setLastInputText, getLastInputText } from "../state/session";
+import { usePremium } from "../lib/premium";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
 
@@ -18,12 +19,17 @@ type Props = NativeStackScreenProps<RootStackParamList, "Input">;
 export function InputScreen({ navigation }: Props) {
   const [text, setText] = useState(() => getLastInputText());
   const [loading, setLoading] = useState(false);
+  const { isPremium } = usePremium();
 
   const handleStructure = async () => {
     const trimmed = text.trim();
     if (!trimmed) {
       Alert.alert("입력", "텍스트를 입력해 주세요.");
       return;
+    }
+    // 추천: 기능 게이트는 참조만. 다음 단계에서 무료 제한 정책 확정 후 적용
+    if (!isPremium) {
+      /* TODO: 무료 제한 정책 적용 (예: 단계 수 제한, 저장 제한 등) */
     }
 
     setLoading(true);

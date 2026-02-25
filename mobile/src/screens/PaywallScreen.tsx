@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
+import { usePremium } from "../lib/premium";
 
 const MAX_CONTENT_WIDTH = 340;
 
@@ -18,9 +19,40 @@ type Props = NativeStackScreenProps<RootStackParamList, "Paywall">;
 export function PaywallScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
+  const { purchaseMonthly, restorePurchases } = usePremium();
+  const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
-  const handleStartPremium = () => {
-    Alert.alert("안내", "결제 연결 전(placeholder)");
+  const handleStartPremium = async () => {
+    if (purchasing) return;
+    setPurchasing(true);
+    try {
+      // 추천: purchaseMonthly가 성공하면 전역 isPremium 갱신 후 Paywall 닫기
+      const { success, message } = await purchaseMonthly();
+      if (success) {
+        navigation.goBack();
+      } else {
+        Alert.alert("안내", message ?? "결제를 완료하지 못했어요. 다시 시도해 주세요.");
+      }
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    if (restoring) return;
+    setRestoring(true);
+    try {
+      const { success, message } = await restorePurchases();
+      if (success) {
+        Alert.alert("안내", "복원이 완료됐어요.");
+        navigation.goBack();
+      } else {
+        Alert.alert("안내", message ?? "복원할 구매 내역이 없어요.");
+      }
+    } finally {
+      setRestoring(false);
+    }
   };
 
   const handleLater = () => {
@@ -110,14 +142,17 @@ export function PaywallScreen({ navigation }: Props) {
 
         {/* CTA */}
         <View style={styles.ctaSection}>
-          <TouchableOpacity
-            style={styles.ctaButton}
-            onPress={handleStartPremium}
-            activeOpacity={0.88}
-          >
-            <Text style={styles.ctaIcon}>✨</Text>
-            <Text style={styles.ctaText}>프리미엄 시작하기</Text>
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.ctaButton, purchasing && styles.ctaButtonDisabled]}
+          onPress={handleStartPremium}
+          disabled={purchasing}
+          activeOpacity={0.88}
+        >
+          <Text style={styles.ctaIcon}>✨</Text>
+          <Text style={styles.ctaText}>
+            {purchasing ? "처리 중..." : "프리미엄 시작하기"}
+          </Text>
+        </TouchableOpacity>
           <TouchableOpacity
             style={styles.laterButton}
             onPress={handleLater}
@@ -132,6 +167,16 @@ export function PaywallScreen({ navigation }: Props) {
           <Text style={styles.legal}>
             구독은 자동 갱신되며 언제든 취소할 수 있습니다.
           </Text>
+          <TouchableOpacity
+            onPress={handleRestore}
+            disabled={restoring}
+            style={styles.restoreButton}
+          >
+            {/* 추천: 복원 후 isPremium이 true면 사용자에게 안내 후 Paywall 닫기 */}
+            <Text style={styles.restoreText}>
+              {restoring ? "복원 중..." : "구매 복원"}
+            </Text>
+          </TouchableOpacity>
           <View style={styles.legalLinks}>
             <TouchableOpacity onPress={() => {}}>
               <Text style={styles.legalLink}>이용약관</Text>
@@ -329,6 +374,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "rgba(255,255,255,0.6)",
   },
+  ctaButtonDisabled: { opacity: 0.7 },
   footer: {
     width: "100%",
     maxWidth: MAX_CONTENT_WIDTH,
@@ -339,6 +385,15 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.45)",
     textAlign: "center",
     lineHeight: 16,
+  },
+  restoreButton: {
+    marginTop: 8,
+    paddingVertical: 4,
+  },
+  restoreText: {
+    fontSize: 11,
+    color: "#00C2A8",
+    textDecorationLine: "underline",
   },
   legalLinks: {
     flexDirection: "row",
