@@ -67,7 +67,7 @@ export function InputScreen({ navigation }: Props) {
           <View style={styles.logoIcon}>
             <Text style={styles.logoIconText}>✦</Text>
           </View>
-          <Text style={styles.logoText}>StartNow</Text>
+          <Text style={styles.logoText}>ThinkFlow</Text>
         </View>
         <View style={styles.headerRight}>
           <View style={styles.pill}>
@@ -80,6 +80,15 @@ export function InputScreen({ navigation }: Props) {
           >
             <Text style={styles.historyIcon}>↻</Text>
             <Text style={styles.historyBtnText}>History</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.premiumBtn}
+            onPress={() => (navigation as any).navigate("Paywall")}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.premiumIcon}>👑</Text>
+            <Text style={styles.premiumBtnText}>Premium</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -193,6 +202,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: "#fff",
+  },
+  premiumBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginLeft: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: "rgba(0,194,168,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(0,194,168,0.35)",
+  },
+  premiumIcon: {
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  premiumBtnText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#00C2A8",
   },
   divider: {
     width: "100%",
