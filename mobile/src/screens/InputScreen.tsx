@@ -69,16 +69,13 @@ export function InputScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
+        <View style={styles.leftGroup}>
           <View style={styles.logoIcon}>
             <Text style={styles.logoIconText}>✦</Text>
           </View>
           <Text style={styles.logoText}>ThinkFlow</Text>
         </View>
-        <View style={styles.headerRight}>
-          <View style={styles.pill}>
-            <Text style={styles.pillText}>AI Powered</Text>
-          </View>
+        <View style={styles.rightGroup}>
           <TouchableOpacity
             style={styles.historyBtn}
             onPress={() => navigation.navigate("History")}
@@ -143,6 +140,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     paddingTop: 48,
+    paddingHorizontal: 16,
     backgroundColor: "#1C1C1E",
   },
   header: {
@@ -151,10 +149,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 28,
   },
-  headerLeft: {
+  leftGroup: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+    marginRight: 12,
   },
   logoIcon: {
     width: 36,
@@ -173,28 +172,17 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#fff",
   },
-  headerRight: {
+  rightGroup: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-  },
-  pill: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 9999,
-  },
-  pillText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#fff",
+    gap: 6,
   },
   historyBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     borderRadius: 9999,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.15)",
@@ -213,9 +201,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginLeft: 10,
+    marginLeft: 4,
     paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     borderRadius: 8,
     backgroundColor: "rgba(0,194,168,0.1)",
     borderWidth: 1,

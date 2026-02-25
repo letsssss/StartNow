@@ -14,6 +14,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.thinkflow.workflow",
+      "buildNumber": "2",
       "supportsTablet": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
