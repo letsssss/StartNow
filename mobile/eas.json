@@ -3,21 +3,30 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "ios": {
-        "simulator": false
-      }
+      "android": { "buildType": "apk" },
+      "ios": { "simulator": false }
     },
     "production": {
-      "ios": {
-        "distribution": "store"
+      "ios": { "distribution": "store" },
+      "android": { "buildType": "app-bundle" },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://thinkflow-api-lac.vercel.app"
       }
+    },
+    "preview-apk": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "environment": "production",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://thinkflow-api-lac.vercel.app"
+      }
+    },
+    "debug-apk-local": {
+      "distribution": "internal",
+      "android": { "buildType": "apk", "gradleCommand": ":app:assembleDebug" }
     }
   },
   "submit": {
-    "production": {
-      "ios": {
-        "ascAppId": "6759628291"
-      }
-    }
+    "production": { "ios": { "ascAppId": "6759628291" } }
   }
 }

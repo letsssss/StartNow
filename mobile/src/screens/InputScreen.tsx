@@ -9,6 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { structureText } from "../infra/apiClient";
+import { getApiBaseUrl } from "../config/api";
 import { setLastStructuredResult, setLastInputText, getLastInputText } from "../state/session";
 import { usePremium } from "../lib/premium";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -46,20 +47,26 @@ export function InputScreen({ navigation }: Props) {
         }
       }
     } catch (e) {
-      Alert.alert("오류", "서버 연결 실패");
-      const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-      const endpoint = "/api/structure";
+      if (__DEV__) {
+        console.log("[DEV_ALERT_TEXT]", `서버 연결 실패 | ${String(e)}`);
+        Alert.alert("오류", `서버 연결 실패\n\n${String(e)}`);
+        Alert.alert(
+          "DEV ERROR DETAIL",
+          String(e),
+          [{ text: "OK" }],
+          { cancelable: true }
+        );
+      } else {
+        Alert.alert("오류", "서버 연결 실패");
+      }
       if (__DEV__) {
         const message = e instanceof Error ? e.message : String(e);
         console.log("[structure] 네트워크 실패:", {
           message,
-          BASE_URL: BASE_URL ?? "(미설정)",
-          endpoint,
+          BASE_URL: getApiBaseUrl() || "(미설정)",
+          endpoint: "/api/structure",
           hint: "같은 WiFi 확인, 백엔드 포트 3000 또는 3001에서 실행 중인지 확인, Windows 방화벽 인바운드 허용",
         });
-        if (!BASE_URL) {
-          console.log("[structure] .env에 EXPO_PUBLIC_API_BASE_URL=http://PC_IP:3000 또는 :3001 설정 후 'npx expo start -c' 재시작");
-        }
       }
     } finally {
       setLoading(false);

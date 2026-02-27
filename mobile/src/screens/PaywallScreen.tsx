@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -15,6 +16,8 @@ import { usePremium } from "../lib/premium";
 const MAX_CONTENT_WIDTH = 340;
 
 type Props = NativeStackScreenProps<RootStackParamList, "Paywall">;
+
+const PRIVACY_POLICY_URL = "https://letsssss.github.io/StartNow/privacy-policy/";
 
 export function PaywallScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
@@ -57,6 +60,12 @@ export function PaywallScreen({ navigation }: Props) {
 
   const handleLater = () => {
     navigation.goBack();
+  };
+
+  const openPrivacyPolicy = () => {
+    Linking.openURL(PRIVACY_POLICY_URL).catch(() =>
+      Alert.alert("안내", "링크를 열 수 없어요.")
+    );
   };
 
   return (
@@ -182,7 +191,7 @@ export function PaywallScreen({ navigation }: Props) {
               <Text style={styles.legalLink}>이용약관</Text>
             </TouchableOpacity>
             <Text style={styles.legalSlash}>/</Text>
-            <TouchableOpacity onPress={() => {}}>
+            <TouchableOpacity onPress={openPrivacyPolicy}>
               <Text style={styles.legalLink}>개인정보처리방침</Text>
             </TouchableOpacity>
           </View>
